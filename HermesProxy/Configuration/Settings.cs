@@ -35,6 +35,9 @@ namespace Framework
         public static System.Collections.Generic.HashSet<uint> SkipCreatureEntries = new();
         // TEMP DIAGNOSTIC: log every creature/gameobject CreateObject with its display id.
         public static bool LogCreatureCreates;
+        // Drop GameObject creates whose entry is >= this value (0 = off). Capycraft's custom/event
+        // GameObjects (entry >= ~50000) reference models the 1.14 client's content lacks and crash it.
+        public static uint DropGameObjectEntriesAbove;
 
         public static bool LoadAndVerifyFrom(ConfigurationParser config)
         {
@@ -66,6 +69,7 @@ namespace Framework
             foreach (var part in config.GetString("SkipCreatureEntries", "").Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries))
                 if (uint.TryParse(part, out var e)) SkipCreatureEntries.Add(e);
             LogCreatureCreates = config.GetBoolean("LogCreatureCreates", false);
+            DropGameObjectEntriesAbove = (uint)config.GetInt("DropGameObjectEntriesAbove", 0);
 
             return VerifyConfig();
         }
