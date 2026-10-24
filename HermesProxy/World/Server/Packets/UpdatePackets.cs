@@ -296,6 +296,17 @@ namespace HermesProxy.World.Server.Packets
                 ObjectUpdates.RemoveAll(u =>
                     (u.Type == UpdateTypeModern.CreateObject1 || u.Type == UpdateTypeModern.CreateObject2)
                     && u.Guid.GetObjectType() == ObjectType.Unit);
+            if (Framework.Settings.DropGameObjectDisplays.Count > 0)
+                ObjectUpdates.RemoveAll(u =>
+                    (u.Type == UpdateTypeModern.CreateObject1 || u.Type == UpdateTypeModern.CreateObject2)
+                    && u.Guid.GetObjectType() == ObjectType.GameObject
+                    && u.GameObjectData?.DisplayID != null
+                    && Framework.Settings.DropGameObjectDisplays.Contains((uint)u.GameObjectData.DisplayID.Value));
+            if (Framework.Settings.DropZeroEntryGameObjects)
+                ObjectUpdates.RemoveAll(u =>
+                    (u.Type == UpdateTypeModern.CreateObject1 || u.Type == UpdateTypeModern.CreateObject2)
+                    && u.Guid.GetObjectType() == ObjectType.GameObject
+                    && u.Guid.GetEntry() == 0);
             if (Framework.Settings.LogCreatureCreates)
                 foreach (var u in ObjectUpdates)
                     if (u.Type == UpdateTypeModern.CreateObject1 || u.Type == UpdateTypeModern.CreateObject2)

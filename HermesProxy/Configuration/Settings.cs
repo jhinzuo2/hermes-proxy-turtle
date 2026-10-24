@@ -42,6 +42,10 @@ namespace Framework
         public static bool DropAllGameObjects;
         // TEMP DIAGNOSTIC: drop every creature (Unit) create.
         public static bool DropAllUnits;
+        // Drop GameObject creates whose DisplayID is in this set (narrow the crashing display).
+        public static System.Collections.Generic.HashSet<uint> DropGameObjectDisplays = new();
+        // Drop GameObject creates whose resolved entry is 0 (proxy couldn't resolve the template).
+        public static bool DropZeroEntryGameObjects;
 
         public static bool LoadAndVerifyFrom(ConfigurationParser config)
         {
@@ -76,6 +80,10 @@ namespace Framework
             DropGameObjectEntriesAbove = (uint)config.GetInt("DropGameObjectEntriesAbove", 0);
             DropAllGameObjects = config.GetBoolean("DropAllGameObjects", false);
             DropAllUnits = config.GetBoolean("DropAllUnits", false);
+            DropGameObjectDisplays = new System.Collections.Generic.HashSet<uint>();
+            foreach (var part in config.GetString("DropGameObjectDisplays", "").Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries))
+                if (uint.TryParse(part, out var d)) DropGameObjectDisplays.Add(d);
+            DropZeroEntryGameObjects = config.GetBoolean("DropZeroEntryGameObjects", false);
 
             return VerifyConfig();
         }
