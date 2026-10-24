@@ -521,7 +521,10 @@ namespace HermesProxy.World.Client
                     SendPacketToClient(reply);
             }
 
-            if (!GameData.ItemCanHaveModel(item))
+            // Only send our own appearance hotfixes for equippable visual items the client does
+            // NOT already have a native appearance row for. Sending them for client-known items
+            // dangles the appearance chain and crashes the client (the "?" custom-item crash).
+            if (!GameData.ItemCanHaveModel(item) || GameData.ClientItemAppearances.Contains(item.Entry))
                 return;
 
             reply = GameData.GenerateItemAppearanceUpdateIfNeeded(item);

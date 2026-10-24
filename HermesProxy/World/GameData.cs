@@ -25,6 +25,10 @@ namespace HermesProxy.World
         public static Dictionary<uint, ItemSparseRecord> ItemSparseRecordsStore = new Dictionary<uint, ItemSparseRecord>();
         public static Dictionary<uint, ItemAppearance> ItemAppearanceStore = new Dictionary<uint, ItemAppearance>();
         public static Dictionary<uint, ItemModifiedAppearance> ItemModifiedAppearanceStore = new Dictionary<uint, ItemModifiedAppearance>();
+        // Item entries that already have a client-side appearance row in the client's own DB2.
+        // For these we must NOT send our own appearance hotfix, or the chain dangles and the
+        // client null-derefs on render (the "?" custom items crash). Populated from CSV.
+        public static HashSet<uint> ClientItemAppearances = new HashSet<uint>();
         public static Dictionary<uint, ItemEffect> ItemEffectStore = new Dictionary<uint, ItemEffect>();
         public static Dictionary<uint, Battleground> Battlegrounds = new Dictionary<uint, Battleground>();
         public static Dictionary<uint, ChatChannel> ChatChannels = new Dictionary<uint, ChatChannel>();
@@ -498,6 +502,7 @@ namespace HermesProxy.World
             LoadItemSparseRecords();
             LoadItemAppearance();
             LoadItemModifiedAppearance();
+            LoadClientItemAppearances();
             LoadItemEffect();
             LoadItemSpellsData();
             LoadItemDisplayIdToFileDataId();
@@ -945,6 +950,20 @@ namespace HermesProxy.World
                     ItemSpellsDataStore.Add((uint)data.Id, data);
                 }
             }
+        }
+
+        public static void LoadClientItemAppearances()
+        {
+            var path = Path.Combine("CSV", $"ClientItemAppearances{ModernVersion.ExpansionVersion}.csv");
+            if (!File.Exists(path))
+                return;
+
+            foreach (var line in File.ReadAllLines(path))
+            {
+                if (uint.TryParse(line.Trim(), out var itemId))
+                    ClientItemAppearances.Add(itemId);
+            }
+            Log.Print(LogType.Storage, $"{ClientItemAppearances.Count} items have client-side appearance rows.");
         }
 
         public static void LoadItemDisplayIdToFileDataId()
