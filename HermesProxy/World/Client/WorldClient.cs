@@ -365,6 +365,16 @@ namespace HermesProxy.World.Client
             }
         }
 
+        // Opcodes the legacy server may legitimately send before SMSG_AUTH_RESPONSE that we don't
+        // translate. Without this allow-list the default handler flips _isSuccessful to false on the
+        // unknown packet and kills the handshake before AuthResponse arrives — TurtleWoW/Capycraft
+        // send SMSG_WARDEN_DATA mid-auth, and TC-derived cores push SMSG_CACHE_VERSION unprompted.
+        private static bool IsIgnorableDuringHandshake(Opcode op)
+        {
+            return op == Opcode.SMSG_WARDEN_DATA
+                || op == Opcode.SMSG_CACHE_VERSION;
+        }
+
         private void HandlePacket(WorldPacket packet)
         {
             Opcode universalOpcode = packet.GetUniversalOpcode(false);
@@ -384,6 +394,13 @@ namespace HermesProxy.World.Client
                     if (_packetHandlers.ContainsKey(universalOpcode))
                     {
                         _packetHandlers[universalOpcode](packet);
+                    }
+                    else if (IsIgnorableDuringHandshake(universalOpcode))
+                    {
+                        // Opcodes the legacy server may legitimately send before SMSG_AUTH_RESPONSE
+                        // that we don't translate. Without this allow-list the branch below flips
+                        // _isSuccessful to false on the unknown packet and kills the handshake before
+                        // AuthResponse arrives — TurtleWoW/Capycraft send SMSG_WARDEN_DATA mid-auth.
                     }
                     else
                     {
