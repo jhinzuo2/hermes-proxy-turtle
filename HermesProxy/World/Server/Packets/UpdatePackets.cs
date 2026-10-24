@@ -277,6 +277,23 @@ namespace HermesProxy.World.Server.Packets
 
         public override void Write()
         {
+            // TEMP DIAGNOSTIC: drop / log creature creates to pin a client-crashing NPC.
+            if (Framework.Settings.SkipCreatureEntries.Count > 0)
+                ObjectUpdates.RemoveAll(u =>
+                    (u.Type == UpdateTypeModern.CreateObject1 || u.Type == UpdateTypeModern.CreateObject2)
+                    && u.Guid.GetObjectType() == ObjectType.Unit
+                    && Framework.Settings.SkipCreatureEntries.Contains(u.Guid.GetEntry()));
+            if (Framework.Settings.LogCreatureCreates)
+                foreach (var u in ObjectUpdates)
+                    if (u.Type == UpdateTypeModern.CreateObject1 || u.Type == UpdateTypeModern.CreateObject2)
+                    {
+                        var ot = u.Guid.GetObjectType();
+                        if (ot == ObjectType.Unit)
+                            Framework.Logging.Log.Print(Framework.Logging.LogType.Server, $"[CreateTrace] Unit entry={u.Guid.GetEntry()} displayId={u.UnitData?.DisplayID}");
+                        else if (ot == ObjectType.GameObject)
+                            Framework.Logging.Log.Print(Framework.Logging.LogType.Server, $"[CreateTrace] GameObject entry={u.Guid.GetEntry()} displayId={u.GameObjectData?.DisplayID}");
+                    }
+
             NumObjUpdates = (uint)ObjectUpdates.Count;
             MapID = (ushort)_gameState.CurrentMapId;
 

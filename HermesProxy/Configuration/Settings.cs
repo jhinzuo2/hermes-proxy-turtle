@@ -30,6 +30,11 @@ namespace Framework
         public static int ServerSpellDelay;
         public static int ClientSpellDelay;
         public static int LogonBuild;
+        // TEMP DIAGNOSTIC: comma-separated creature entry ids whose CreateObject is dropped before
+        // being sent to the client (binary-search a client-crashing creature). Empty = send all.
+        public static System.Collections.Generic.HashSet<uint> SkipCreatureEntries = new();
+        // TEMP DIAGNOSTIC: log every creature/gameobject CreateObject with its display id.
+        public static bool LogCreatureCreates;
 
         public static bool LoadAndVerifyFrom(ConfigurationParser config)
         {
@@ -57,6 +62,10 @@ namespace Framework
             // TurtleWoW-derived realmd (Capycraft) rejects 5875 and wants e.g. 7272, while the
             // world server still expects the real ServerBuild in CMSG_AUTH_SESSION.
             LogonBuild = config.GetInt("LogonBuild", 0);
+            SkipCreatureEntries = new System.Collections.Generic.HashSet<uint>();
+            foreach (var part in config.GetString("SkipCreatureEntries", "").Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries))
+                if (uint.TryParse(part, out var e)) SkipCreatureEntries.Add(e);
+            LogCreatureCreates = config.GetBoolean("LogCreatureCreates", false);
 
             return VerifyConfig();
         }
