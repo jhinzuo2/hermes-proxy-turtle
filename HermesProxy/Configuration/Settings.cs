@@ -46,6 +46,9 @@ namespace Framework
         public static System.Collections.Generic.HashSet<uint> DropGameObjectDisplays = new();
         // Drop GameObject creates whose resolved entry is 0 (proxy couldn't resolve the template).
         public static bool DropZeroEntryGameObjects;
+        // Drop GameObject creates with no resolvable display (GameObjectData null or DisplayID null/0).
+        // These are unrenderable and null-deref the client (ERROR #132, reading 0x10). Default ON.
+        public static bool DropNullDisplayGameObjects;
 
         public static bool LoadAndVerifyFrom(ConfigurationParser config)
         {
@@ -84,6 +87,7 @@ namespace Framework
             foreach (var part in config.GetString("DropGameObjectDisplays", "").Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries))
                 if (uint.TryParse(part, out var d)) DropGameObjectDisplays.Add(d);
             DropZeroEntryGameObjects = config.GetBoolean("DropZeroEntryGameObjects", false);
+            DropNullDisplayGameObjects = config.GetBoolean("DropNullDisplayGameObjects", true);
 
             return VerifyConfig();
         }

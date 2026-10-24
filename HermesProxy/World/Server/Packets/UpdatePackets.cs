@@ -307,6 +307,11 @@ namespace HermesProxy.World.Server.Packets
                     (u.Type == UpdateTypeModern.CreateObject1 || u.Type == UpdateTypeModern.CreateObject2)
                     && u.Guid.GetObjectType() == ObjectType.GameObject
                     && u.Guid.GetEntry() == 0);
+            if (Framework.Settings.DropNullDisplayGameObjects)
+                ObjectUpdates.RemoveAll(u =>
+                    (u.Type == UpdateTypeModern.CreateObject1 || u.Type == UpdateTypeModern.CreateObject2)
+                    && u.Guid.GetObjectType() == ObjectType.GameObject
+                    && (u.GameObjectData?.DisplayID == null || u.GameObjectData.DisplayID.Value == 0));
             if (Framework.Settings.LogCreatureCreates)
                 foreach (var u in ObjectUpdates)
                     if (u.Type == UpdateTypeModern.CreateObject1 || u.Type == UpdateTypeModern.CreateObject2)
