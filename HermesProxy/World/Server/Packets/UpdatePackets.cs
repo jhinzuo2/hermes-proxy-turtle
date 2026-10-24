@@ -281,7 +281,7 @@ namespace HermesProxy.World.Server.Packets
             if (Framework.Settings.SkipCreatureEntries.Count > 0)
                 ObjectUpdates.RemoveAll(u =>
                     (u.Type == UpdateTypeModern.CreateObject1 || u.Type == UpdateTypeModern.CreateObject2)
-                    && u.Guid.GetObjectType() == ObjectType.Unit
+                    && (u.Guid.GetObjectType() == ObjectType.Unit || u.Guid.GetObjectType() == ObjectType.GameObject)
                     && Framework.Settings.SkipCreatureEntries.Contains(u.Guid.GetEntry()));
             if (Framework.Settings.LogCreatureCreates)
                 foreach (var u in ObjectUpdates)
