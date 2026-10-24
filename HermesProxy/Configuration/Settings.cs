@@ -38,6 +38,10 @@ namespace Framework
         // Drop GameObject creates whose entry is >= this value (0 = off). Capycraft's custom/event
         // GameObjects (entry >= ~50000) reference models the 1.14 client's content lacks and crash it.
         public static uint DropGameObjectEntriesAbove;
+        // TEMP DIAGNOSTIC: drop every GameObject create (confirm whether a GO is the crash trigger).
+        public static bool DropAllGameObjects;
+        // TEMP DIAGNOSTIC: drop every creature (Unit) create.
+        public static bool DropAllUnits;
 
         public static bool LoadAndVerifyFrom(ConfigurationParser config)
         {
@@ -70,6 +74,8 @@ namespace Framework
                 if (uint.TryParse(part, out var e)) SkipCreatureEntries.Add(e);
             LogCreatureCreates = config.GetBoolean("LogCreatureCreates", false);
             DropGameObjectEntriesAbove = (uint)config.GetInt("DropGameObjectEntriesAbove", 0);
+            DropAllGameObjects = config.GetBoolean("DropAllGameObjects", false);
+            DropAllUnits = config.GetBoolean("DropAllUnits", false);
 
             return VerifyConfig();
         }

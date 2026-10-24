@@ -288,6 +288,14 @@ namespace HermesProxy.World.Server.Packets
                     (u.Type == UpdateTypeModern.CreateObject1 || u.Type == UpdateTypeModern.CreateObject2)
                     && u.Guid.GetObjectType() == ObjectType.GameObject
                     && u.Guid.GetEntry() >= Framework.Settings.DropGameObjectEntriesAbove);
+            if (Framework.Settings.DropAllGameObjects)
+                ObjectUpdates.RemoveAll(u =>
+                    (u.Type == UpdateTypeModern.CreateObject1 || u.Type == UpdateTypeModern.CreateObject2)
+                    && u.Guid.GetObjectType() == ObjectType.GameObject);
+            if (Framework.Settings.DropAllUnits)
+                ObjectUpdates.RemoveAll(u =>
+                    (u.Type == UpdateTypeModern.CreateObject1 || u.Type == UpdateTypeModern.CreateObject2)
+                    && u.Guid.GetObjectType() == ObjectType.Unit);
             if (Framework.Settings.LogCreatureCreates)
                 foreach (var u in ObjectUpdates)
                     if (u.Type == UpdateTypeModern.CreateObject1 || u.Type == UpdateTypeModern.CreateObject2)
