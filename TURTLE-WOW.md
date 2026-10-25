@@ -55,6 +55,7 @@ site: the client resolving a model it doesn't have.
 | Crash near boats/zeppelins and WMO objects | transports only got their flags when their route was in `Transports1.csv`; WMO-model objects never got the map-object flag (0x100000), so the client loaded them as M2 | ported from Ravencraft's proxy: transports always flagged (unknown period → 300000), WMO displays (`GameObjectWmoDisplays1.csv`) / type 14 get 0x100000; Ravencraft's `Transports1.csv` (tuned periods, Turtle routes) |
 | Stuck on the Caverns of Time drake | Turtle "air swim": server echoes our own movement with Swimming set; the 1.14 client can't swim in air | `AirSwimAsFlight` (SMSG_MOVE_SET_CAN_FLY on first echo, unset on dismount / non-swim echo / new world) |
 | Transmogged gear invisible in the world | Capycraft sends transmogged slots as server-only item ids | `ResolveUnknownVisibleItems`: query the template, show a client item with the same display, re-send the slot. Queries made only for this push nothing to the client (pushing their appearance records crashed it). |
+| "?" icons on Turtle items | the proxy's display → icon table only knows Blizzard displays | `deploy/CSV/ItemDisplayIdToFileDataId1.csv` + 10,833 rows from the Turtle client's `ItemDisplayInfo.dbc` (icon name → 1.14 icon via `tools/turtle/icons`); exact icon names only |
 | Crash from transmog stand-ins | first item with the display could be a ring/consumable with no model | stand-ins limited to visible gear slots; items with an appearance row preferred (`BuildClientItemSnapshot`); NPC weapons use the same lookup |
 
 ## Data
@@ -85,15 +86,18 @@ weapons are missing), so "has an appearance row" is a preference, not a requirem
   ```
   dotnet run --project tools/turtle/dbscan -c Release -- <tortoise-wow>/sql <proxy>/CSV <dir with stock-*.txt logs> <out dir>
   ```
+- `icons/`: `extract-dbc.ps1` pulls DBCs from a Turtle client's MPQs (needs a StormLib.dll), `map-icons.ps1`
+  turns `ItemDisplayInfo.dbc` into icon rows for `ItemDisplayIdToFileDataId1.csv`.
 - `raven-exe/`: read Ravencraft's single-file `HermesProxy.exe`: `extract-bundle.ps1` (HermesProxy.dll +
   Framework.dll, for decompiling with ilspycmd), `extract-all.ps1` + `make-fwdep.ps1` (run it unpacked on the
   installed runtime), `inspect-il.ps1` and `patcher/` (IL patching experiments).
 
 ## Known open issues
 
-- **"?" icons:** about 300 items (scan C2), e.g. 60432/60435 (Elite Guard, displays 7698/7255), 61000 Time-Worn Rune
-  (69118), 33278 (69050). No icon for those displays in any CSV. The Turtle 1.18.1 client's
-  `ItemDisplayInfo.dbc` maps display → icon name and could fill `ItemDisplayIdToFileDataId`.
+- **"?" icons (remaining):** Turtle-only icon art the 1.14 client lacks (e.g. Crest of Valor/Heroism
+  `inv_misc_token_01/02`, 61000 Time-Worn Rune `inv_misc_rune_08_yellow`, some custom swords), plus displays with an
+  empty icon name in Turtle's DBC. 70 of the scan's 297 no-icon items. Expected to come with Ravencraft content
+  updates; same-family look-alikes were considered and left out on purpose.
 - **Creatures shown as guards:** 57 displays (38 spawned, ~470 spawns; mostly Turtle's satyr remodels 21577–21601).
   If new launcher content adds those models, the proxy's `CreatureDisplayInfo.csv` must learn them, or the
   fallback keeps hiding them.
