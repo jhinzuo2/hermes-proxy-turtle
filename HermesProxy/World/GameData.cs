@@ -173,9 +173,14 @@ namespace HermesProxy.World
         // Snapshot of the items the client has its own data for, taken at load time: ItemRecordsStore
         // also grows at runtime with records we create, which the client may not have.
         static HashSet<uint> ClientKnownItems = new();
-        // Legacy display -> a client item that is wearable and has an appearance row, so it can be drawn.
+        // Legacy display -> a client item drawn in a visible gear slot. Items with an appearance row in our
+        // CSV are preferred; the CSV is incomplete (e.g. vanilla starter weapons are missing), so other
+        // visible-slot gear is the fallback. Rings, trinkets and non-gear never qualify: they have no model.
         static Dictionary<(uint DisplayId, int InventoryType), uint> ClientGearByDisplayAndSlot = new();
         static Dictionary<uint, uint> ClientGearByDisplay = new();
+        static Dictionary<(uint DisplayId, int InventoryType), uint> ClientGearByDisplayAndSlotNoAppearance = new();
+        static Dictionary<uint, uint> ClientGearByDisplayNoAppearance = new();
+        static readonly HashSet<int> VisibleGearSlots = new() { 1, 3, 4, 5, 6, 7, 8, 9, 10, 13, 14, 15, 16, 17, 19, 20, 21, 22, 23, 25, 26 };
 
         public static void BuildClientItemSnapshot()
         {
@@ -188,13 +193,20 @@ namespace HermesProxy.World
 
             foreach (var item in ItemDisplayIdStore)
             {
-                if (!ItemRecordsStore.TryGetValue(item.Key, out var row) || row.InventoryType == 0 ||
-                    !itemsWithAppearance.Contains(item.Key))
+                if (!ItemRecordsStore.TryGetValue(item.Key, out var row) || !VisibleGearSlots.Contains(row.InventoryType))
                     continue;
-                ClientGearByDisplayAndSlot.TryAdd((item.Value, row.InventoryType), item.Key);
-                ClientGearByDisplay.TryAdd(item.Value, item.Key);
+                if (itemsWithAppearance.Contains(item.Key))
+                {
+                    ClientGearByDisplayAndSlot.TryAdd((item.Value, row.InventoryType), item.Key);
+                    ClientGearByDisplay.TryAdd(item.Value, item.Key);
+                }
+                else
+                {
+                    ClientGearByDisplayAndSlotNoAppearance.TryAdd((item.Value, row.InventoryType), item.Key);
+                    ClientGearByDisplayNoAppearance.TryAdd(item.Value, item.Key);
+                }
             }
-            Log.Print(LogType.Storage, $"{ClientGearByDisplay.Count} gear displays can stand in for unknown visible items.");
+            Log.Print(LogType.Storage, $"{ClientGearByDisplay.Count} gear displays (+{ClientGearByDisplayNoAppearance.Keys.Count(d => !ClientGearByDisplay.ContainsKey(d))} without appearance rows) can stand in for unknown visible items.");
         }
 
         public static bool IsItemKnownToClient(uint entry)
@@ -205,9 +217,12 @@ namespace HermesProxy.World
         // A wearable client item with this look (same inventory type preferred), drawn from the client's own data.
         public static uint GetClientItemIdWithDisplayId(uint displayId, int inventoryType)
         {
-            if (ClientGearByDisplayAndSlot.TryGetValue((displayId, inventoryType), out uint itemId))
+            if (ClientGearByDisplayAndSlot.TryGetValue((displayId, inventoryType), out uint itemId) ||
+                ClientGearByDisplay.TryGetValue(displayId, out itemId) ||
+                ClientGearByDisplayAndSlotNoAppearance.TryGetValue((displayId, inventoryType), out itemId) ||
+                ClientGearByDisplayNoAppearance.TryGetValue(displayId, out itemId))
                 return itemId;
-            return ClientGearByDisplay.TryGetValue(displayId, out itemId) ? itemId : 0;
+            return 0;
         }
 
         public static ItemAppearance GetItemAppearanceByDisplayId(uint displayId)

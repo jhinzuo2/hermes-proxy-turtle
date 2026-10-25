@@ -1,5 +1,8 @@
 # HermesProxy ![Build](https://github.com/WowLegacyCore/HermesProxy/actions/workflows/Build_Proxy.yml/badge.svg)
 
+> **Turtle-WoW fork:** this repository adds support for Turtle-WoW-core servers (Capycraft, …) with the
+> 1.14.2 client. Setup, config options, the list of fixes and known open issues are in [TURTLE-WOW.md](TURTLE-WOW.md).
+
 This project enables play on existing legacy WoW emulation cores using the modern clients. It serves as a translation layer, converting all network traffic to the appropriate format each side can understand.
 
 There are 4 major components to the application:
