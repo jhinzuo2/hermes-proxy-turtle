@@ -29,7 +29,7 @@ Branch `capycraft` carries all fixes; `master` is the earlier state.
 | Option | Default | What it does |
 |---|---|---|
 | `LogonBuild` | 0 | Build sent only in the realmd logon challenge (Capycraft: `7272`). The world server still gets `ServerBuild` (5875). 0 = use `ServerBuild`. |
-| `DropGameObjectEntriesAbove` | 0 | Drop GameObject creates with entry >= value. Capycraft: `1000000` (custom/event objects whose models the client lacks). |
+| `DropGameObjectEntriesAbove` | 0 | Drop GameObject creates with entry >= value. Capycraft: `0` (was `1000000`; not needed since the WMO/transport fix, see below). |
 | `DropNullDisplayGameObjects` | true | Drop GameObjects with no display id. |
 | `DropGameObjectDisplays` | "" | Comma list of GameObject displays to drop (Capycraft config: `7087`, a transport; likely obsolete since the WMO fix). |
 | `SkipCreatureEntries` | "" | Comma list of creature/GameObject entries to drop. |
@@ -48,14 +48,14 @@ site: the client resolving a model it doesn't have.
 |---|---|---|
 | Login rejected | Turtle realmd wants build 7272, world wants 5875 | `LogonBuild` |
 | World handshake aborted | `SMSG_WARDEN_DATA` / `SMSG_CACHE_VERSION` during auth | allow-listed during the handshake (`WorldClient.cs`) |
-| Crash entering Elwynn/Stormwind | custom GameObjects (entry >= 1000000) with models the client lacks | `DropGameObjectEntriesAbove=1000000`, `DropNullDisplayGameObjects` |
-| Crash near specific NPCs (e.g. 80230, Lothos Riftwaker at MC) | creature displays missing from the client | `CreatureDisplayFallback` (logs `[DisplayFallback]`) |
+| Crash entering Elwynn/Stormwind | first worked around by dropping custom GameObjects (entry >= 1000000); the real cause was the missing WMO/transport flags (row below). Ravencraft's client content defines Turtle's object displays, and Ravencraft's proxy drops nothing | `DropNullDisplayGameObjects`; `DropGameObjectEntriesAbove=0` since 2026-10-25 (custom props like Stormwind's food cart, barrels, crates are back, no crashes so far) |
+| Crash near specific NPCs (e.g. 80230 High Elf Ranger, display 18226) | creature displays missing from the client | `CreatureDisplayFallback` (logs `[DisplayFallback]`); 80230 no longer skipped, shown as a guard |
 | Crashes from custom items | proxy sent appearance records for items the client already has | `ClientItemAppearances` gate: no appearance hotfixes for client-known items |
 | Custom items without models/icons | stock item data | Ravencraft's item tables in `deploy/CSV` |
 | Crash near boats/zeppelins and WMO objects | transports only got their flags when their route was in `Transports1.csv`; WMO-model objects never got the map-object flag (0x100000), so the client loaded them as M2 | ported from Ravencraft's proxy: transports always flagged (unknown period → 300000), WMO displays (`GameObjectWmoDisplays1.csv`) / type 14 get 0x100000; Ravencraft's `Transports1.csv` (tuned periods, Turtle routes) |
 | Stuck on the Caverns of Time drake | Turtle "air swim": server echoes our own movement with Swimming set; the 1.14 client can't swim in air | `AirSwimAsFlight` (SMSG_MOVE_SET_CAN_FLY on first echo, unset on dismount / non-swim echo / new world) |
 | Transmogged gear invisible in the world | Capycraft sends transmogged slots as server-only item ids | `ResolveUnknownVisibleItems`: query the template, show a client item with the same display, re-send the slot. Queries made only for this push nothing to the client (pushing their appearance records crashed it). |
-| "?" icons on Turtle items | the proxy's display → icon table only knows Blizzard displays | `deploy/CSV/ItemDisplayIdToFileDataId1.csv` + 10,833 rows from the Turtle client's `ItemDisplayInfo.dbc` (icon name → 1.14 icon via `tools/turtle/icons`); exact icon names only |
+| "?" icons on Turtle items | the proxy's display → icon table only knows Blizzard displays | `deploy/CSV/ItemDisplayIdToFileDataId1.csv` + 10,833 rows from the Turtle client's `ItemDisplayInfo.dbc` (icon name → 1.14 icon via `tools/turtle/client-dbc`); exact icon names only |
 | Crash from transmog stand-ins | first item with the display could be a ring/consumable with no model | stand-ins limited to visible gear slots; items with an appearance row preferred (`BuildClientItemSnapshot`); NPC weapons use the same lookup |
 
 ## Data
@@ -86,8 +86,12 @@ weapons are missing), so "has an appearance row" is a preference, not a requirem
   ```
   dotnet run --project tools/turtle/dbscan -c Release -- <tortoise-wow>/sql <proxy>/CSV <dir with stock-*.txt logs> <out dir>
   ```
-- `icons/`: `extract-dbc.ps1` pulls DBCs from a Turtle client's MPQs (needs a StormLib.dll), `map-icons.ps1`
-  turns `ItemDisplayInfo.dbc` into icon rows for `ItemDisplayIdToFileDataId1.csv`.
+  A 5th argument (a creature name, e.g. `"Lisa Jenkins"`) instead lists every object and NPC spawned within 25
+  yards of it, with entry, display and type: handy for "something is missing next to X".
+- `client-dbc/`: `extract-dbc.ps1` pulls DBCs from a Turtle client's MPQs (needs a StormLib.dll; `patch.MPQ` alone
+  holds the 1.12.1 tables), `map-icons.ps1` turns `ItemDisplayInfo.dbc` into icon rows for
+  `ItemDisplayIdToFileDataId1.csv`, `map-go-displays.ps1` lists Turtle GameObject displays whose model file a 1.12
+  display also uses (1,613 of them; unused so far, a fallback if custom objects ever have to be hidden again).
 - `raven-exe/`: read Ravencraft's single-file `HermesProxy.exe`: `extract-bundle.ps1` (HermesProxy.dll +
   Framework.dll, for decompiling with ilspycmd), `extract-all.ps1` + `make-fwdep.ps1` (run it unpacked on the
   installed runtime), `inspect-il.ps1` and `patcher/` (IL patching experiments).
@@ -101,8 +105,12 @@ weapons are missing), so "has an appearance row" is a preference, not a requirem
 - **Creatures shown as guards:** 57 displays (38 spawned, ~470 spawns; mostly Turtle's satyr remodels 21577–21601).
   If new launcher content adds those models, the proxy's `CreatureDisplayInfo.csv` must learn them, or the
   fallback keeps hiding them.
-- **Unverified GameObjects:** 30 custom-range displays the proxy still sends (scan B). No list of the 1.14
-  client's GameObject displays exists in this repo.
+- **Unverified GameObjects:** with `DropGameObjectEntriesAbove=0` every custom object is sent; Stormwind and the
+  food-cart area are fine. If one crashes, find it via `[CreateTrace]` and add its display to
+  `DropGameObjectDisplays` rather than bringing the entry rule back.
+- **Guild bank icons look grey** (still usable): the proxy's guild bank packets match Ravencraft's exactly
+  (`Locked` never set), so it's on the client/UI side. Unchecked: same on Ravencraft's own server? with
+  `Bagnon_GuildBank` off?
 - **Gear looks without a stand-in** (some transmogs, 44 NPC weapons): no client item uses that display. A full
   1.14.2.42597 `ItemDisplayInfo` id list would show which displays the client has, so the proxy could create
   the appearance records itself.

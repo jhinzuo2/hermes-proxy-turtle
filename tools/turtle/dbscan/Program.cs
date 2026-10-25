@@ -7,6 +7,7 @@ string sqlDir = args[0];      // ...\tortoise-wow\sql
 string csvDir = args[1];      // ...\HermesProxy-Stock\CSV
 string logDir = args[2];      // ...\HermesProxy-Stock (stock-*.txt logs)
 string outDir = args[3];
+string nearName =args.Length > 4 ? args[4] : null;   // optional: list everything spawned near this creature
 
 var keep = new Dictionary<string, (string Key, string[] Cols)>
 {
@@ -14,8 +15,8 @@ var keep = new Dictionary<string, (string Key, string[] Cols)>
     ["gameobject_template"] = ("entry", new[] { "entry", "type", "displayId", "name" }),
     ["item_template"] = ("entry", new[] { "entry", "class", "subclass", "name", "display_id", "inventory_type" }),
     ["creature_equip_template"] = ("entry", new[] { "entry", "equipentry1", "equipentry2", "equipentry3" }),
-    ["creature"] = ("guid", new[] { "guid", "id", "id2", "id3", "id4", "map" }),
-    ["gameobject"] = ("guid", new[] { "guid", "id", "map" }),
+    ["creature"] = ("guid", new[] { "guid", "id", "id2", "id3", "id4", "map", "position_x", "position_y", "position_z" }),
+    ["gameobject"] = ("guid", new[] { "guid", "id", "map", "position_x", "position_y", "position_z" }),
 };
 var tables = keep.Keys.ToDictionary(k => k, k => new Dictionary<long, Dictionary<string, string>>());
 var columns = new Dictionary<string, List<string>>();
@@ -76,6 +77,29 @@ foreach (var r in tables["creature"].Values)
     foreach (var c in new[] { "id", "id2", "id3", "id4" }) { var id = L(r, c); if (id == 0) continue; cSpawns[id] = cSpawns.GetValueOrDefault(id) + 1; (cMaps.TryGetValue(id, out var ms) ? ms : cMaps[id] = new()).Add(L(r, "map")); }
 var gSpawns = new Dictionary<long, int>();
 foreach (var r in tables["gameobject"].Values) { var id = L(r, "id"); gSpawns[id] = gSpawns.GetValueOrDefault(id) + 1; }
+
+if (nearName != null)
+{
+    double F(Dictionary<string, string> r, string c) => double.TryParse(S(r, c), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var x) ? x : 0;
+    var target = tables["creature_template"].Values.Where(t => S(t, "name") == nearName).Select(t => L(t, "entry")).ToHashSet();
+    foreach (var a in tables["creature"].Values.Where(r => target.Contains(L(r, "id"))))
+    {
+        Console.WriteLine($"== {nearName} spawn {L(a, "guid")} map {L(a, "map")} at {F(a, "position_x"):0.0} {F(a, "position_y"):0.0} {F(a, "position_z"):0.0}");
+        double Dist(Dictionary<string, string> r) => L(r, "map") != L(a, "map") ? double.MaxValue :
+            Math.Sqrt(Math.Pow(F(r, "position_x") - F(a, "position_x"), 2) + Math.Pow(F(r, "position_y") - F(a, "position_y"), 2) + Math.Pow(F(r, "position_z") - F(a, "position_z"), 2));
+        foreach (var r in tables["gameobject"].Values.Where(r => Dist(r) < 25).OrderBy(Dist))
+        {
+            var t = tables["gameobject_template"].GetValueOrDefault(L(r, "id")) ?? new();
+            Console.WriteLine($"  GO   {Dist(r),5:0.0}y entry {L(r, "id")} display {L(t, "displayId")} type {L(t, "type")} {S(t, "name")}");
+        }
+        foreach (var r in tables["creature"].Values.Where(r => Dist(r) < 25).OrderBy(Dist))
+        {
+            var t = tables["creature_template"].GetValueOrDefault(L(r, "id")) ?? new();
+            Console.WriteLine($"  NPC  {Dist(r),5:0.0}y entry {L(r, "id")} display {L(t, "display_id1")} {S(t, "name")}{(creatureKnown.Contains(L(t, "display_id1")) ? "" : " [display not in client list]")}");
+        }
+    }
+    return;
+}
 
 var sb = new StringBuilder();
 sb.AppendLine("# Tortoise-WoW world data vs. client model lists");
