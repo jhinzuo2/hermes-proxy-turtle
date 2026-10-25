@@ -16,6 +16,85 @@ namespace HermesProxy.World.Client
 {
     public partial class WorldClient
     {
+        // Capycraft transmog shows a gear slot as a server-only item id (e.g. #171311) whose template carries
+        // the transmogged look. The modern client has no data for it and draws nothing, so show a client-known
+        // item with the same display instead, asking the server for the template first if we don't have it.
+        uint ResolveVisibleItemId(WowGuid128 guid, int slot, uint itemId, ushort itemVisual)
+        {
+            if (itemId == 0 || !Framework.Settings.ResolveUnknownVisibleItems || GameData.IsItemKnownToClient(itemId))
+                return itemId;
+
+            ItemTemplate template = GameData.GetItemTemplate(itemId);
+            if (template == null)
+            {
+                var state = GetSession().GameState;
+                if (!state.PendingVisibleItemSlots.TryGetValue(itemId, out var slots))
+                    state.PendingVisibleItemSlots[itemId] = slots = new();
+                slots.Add((guid, slot, itemVisual));
+
+                if (state.RequestedVisibleItemQueries.Add(itemId))
+                {
+                    WorldPacket query = new WorldPacket(Opcode.CMSG_ITEM_QUERY_SINGLE);
+                    query.WriteUInt32(itemId);
+                    if (LegacyVersion.RemovedInVersion(ClientVersionBuild.V2_0_1_6180))
+                        query.WriteGuid(WowGuid64.Empty);
+                    SendPacketToServer(query);
+                }
+                return itemId;
+            }
+
+            uint substitute = GameData.GetClientItemIdWithDisplayId(template.DisplayID, template.InventoryType);
+            return substitute != 0 ? substitute : itemId;
+        }
+
+        static readonly HashSet<int> LoggedDisplayFallbacks = new();
+
+        // A creature display the client has no model for null-derefs it (ERROR #132, reading 0x10), so show
+        // a known model instead (no model at all for mounts, which need a rideable one).
+        int SafeCreatureDisplay(int displayId, bool isMount)
+        {
+            if (displayId <= 0 || Framework.Settings.CreatureDisplayFallback == 0 ||
+                GameData.IsCreatureDisplayKnownToClient((uint)displayId))
+                return displayId;
+
+            int fallback = isMount ? 0 : (int)Framework.Settings.CreatureDisplayFallback;
+            lock (LoggedDisplayFallbacks)
+            {
+                if (LoggedDisplayFallbacks.Add(displayId))
+                    Log.Print(LogType.Storage, $"[DisplayFallback] Unknown creature display {displayId} -> {fallback}{(isMount ? " (mount)" : "")}");
+            }
+            return fallback;
+        }
+
+        // Called once the server answered our query: redraw the gear slots that were waiting on it.
+        void ResendPendingVisibleItems(uint itemId, bool found)
+        {
+            var state = GetSession().GameState;
+            if (!state.PendingVisibleItemSlots.Remove(itemId, out var slots))
+                return;
+
+            ItemTemplate template = found ? GameData.GetItemTemplate(itemId) : null;
+            uint substitute = template != null ? GameData.GetClientItemIdWithDisplayId(template.DisplayID, template.InventoryType) : 0;
+            Log.Print(LogType.Storage, $"[VisibleItem] #{itemId} display {(template != null ? template.DisplayID.ToString() : "unknown")} -> client item #{substitute} ({slots.Count} slot(s))");
+            if (substitute == 0)
+                return;
+
+            UpdateObject updatePacket = new UpdateObject(state);
+            foreach (var pending in slots)
+            {
+                if (state.GetCachedObjectFieldsLegacy(pending.Guid) == null)
+                    continue; // left view in the meantime
+
+                ObjectUpdate updateData = new ObjectUpdate(pending.Guid, UpdateTypeModern.Values, GetSession());
+                updateData.PlayerData.VisibleItems[pending.Slot] = new VisibleItem();
+                updateData.PlayerData.VisibleItems[pending.Slot].ItemID = (int)substitute;
+                updateData.PlayerData.VisibleItems[pending.Slot].ItemVisual = pending.ItemVisual;
+                updatePacket.ObjectUpdates.Add(updateData);
+            }
+            if (updatePacket.ObjectUpdates.Count > 0)
+                SendPacketToClient(updatePacket);
+        }
+
         // Handlers for SMSG opcodes coming the legacy world server
         [PacketHandler(Opcode.SMSG_DESTROY_OBJECT)]
         void HandleDestroyObject(WorldPacket packet)
@@ -190,6 +269,9 @@ namespace HermesProxy.World.Client
 
             foreach (uint itemId in missingItemTemplates)
             {
+                // A real item object (e.g. in our bags) needs the normal client records, even if a gear
+                // slot also queried it.
+                GetSession().GameState.RequestedVisibleItemQueries.Remove(itemId);
                 WorldPacket packet2 = new WorldPacket(Opcode.CMSG_ITEM_QUERY_SINGLE);
                 packet2.WriteUInt32(itemId);
                 if (LegacyVersion.RemovedInVersion(ClientVersionBuild.V2_0_1_6180))
@@ -1589,7 +1671,8 @@ namespace HermesProxy.World.Client
                         if (updateMaskArray[UNIT_VIRTUAL_ITEM_SLOT_DISPLAY + i])
                         {
                             uint itemDisplayId = updates[UNIT_VIRTUAL_ITEM_SLOT_DISPLAY + i].UInt32Value;
-                            uint itemId = GameData.GetItemIdWithDisplayId(itemDisplayId);
+                            // Only wearable items with an appearance row; others have no model to draw.
+                            uint itemId = GameData.GetClientItemIdWithDisplayId(itemDisplayId, 0);
                             if (itemId != 0)
                             {
                                 VisibleItem visibleItem = new VisibleItem();
@@ -1687,7 +1770,7 @@ namespace HermesProxy.World.Client
                 int UNIT_FIELD_DISPLAYID = LegacyVersion.GetUpdateField(UnitField.UNIT_FIELD_DISPLAYID);
                 if (UNIT_FIELD_DISPLAYID >= 0 && updateMaskArray[UNIT_FIELD_DISPLAYID])
                 {
-                    updateData.UnitData.DisplayID = updates[UNIT_FIELD_DISPLAYID].Int32Value;
+                    updateData.UnitData.DisplayID = SafeCreatureDisplay(updates[UNIT_FIELD_DISPLAYID].Int32Value, false);
 
                     // in post vanilla versions, the client automatically multiplies the scale
                     // the server sends it by the default scale for this display id in the dbc
@@ -1698,12 +1781,12 @@ namespace HermesProxy.World.Client
                 int UNIT_FIELD_NATIVEDISPLAYID = LegacyVersion.GetUpdateField(UnitField.UNIT_FIELD_NATIVEDISPLAYID);
                 if (UNIT_FIELD_NATIVEDISPLAYID >= 0 && updateMaskArray[UNIT_FIELD_NATIVEDISPLAYID])
                 {
-                    updateData.UnitData.NativeDisplayID = updates[UNIT_FIELD_NATIVEDISPLAYID].Int32Value;
+                    updateData.UnitData.NativeDisplayID = SafeCreatureDisplay(updates[UNIT_FIELD_NATIVEDISPLAYID].Int32Value, false);
                 }
                 int UNIT_FIELD_MOUNTDISPLAYID = LegacyVersion.GetUpdateField(UnitField.UNIT_FIELD_MOUNTDISPLAYID);
                 if (UNIT_FIELD_MOUNTDISPLAYID >= 0 && updateMaskArray[UNIT_FIELD_MOUNTDISPLAYID])
                 {
-                    updateData.UnitData.MountDisplayID = updates[UNIT_FIELD_MOUNTDISPLAYID].Int32Value;
+                    updateData.UnitData.MountDisplayID = SafeCreatureDisplay(updates[UNIT_FIELD_MOUNTDISPLAYID].Int32Value, true);
                 }
                 int UNIT_FIELD_MINDAMAGE = LegacyVersion.GetUpdateField(UnitField.UNIT_FIELD_MINDAMAGE);
                 if (UNIT_FIELD_MINDAMAGE >= 0 && updateMaskArray[UNIT_FIELD_MINDAMAGE])
@@ -2084,10 +2167,10 @@ namespace HermesProxy.World.Client
                         if (updateMaskArray[itemIdIndex] || updateMaskArray[enchantIdIndex])
                         {
                             updateData.PlayerData.VisibleItems[i] = new VisibleItem();
-                            if (updates.ContainsKey(itemIdIndex))
-                                updateData.PlayerData.VisibleItems[i].ItemID = updates[itemIdIndex].Int32Value;
                             if (updates.ContainsKey(enchantIdIndex))
                                 updateData.PlayerData.VisibleItems[i].ItemVisual = (ushort)GameData.GetItemEnchantVisual(updates[enchantIdIndex].UInt32Value);
+                            if (updates.ContainsKey(itemIdIndex))
+                                updateData.PlayerData.VisibleItems[i].ItemID = (int)ResolveVisibleItemId(updateData.Guid, i, updates[itemIdIndex].UInt32Value, updateData.PlayerData.VisibleItems[i].ItemVisual);
                         }
                     }
                 }

@@ -49,6 +49,15 @@ namespace Framework
         // Drop GameObject creates with no resolvable display (GameObjectData null or DisplayID null/0).
         // These are unrenderable and null-deref the client (ERROR #132, reading 0x10). Default ON.
         public static bool DropNullDisplayGameObjects;
+        // Turn the server's "air swim" (Swimming flag forced on our own player while airborne, e.g. the
+        // Caverns of Time drake) into real client flight, and report it back to the server as swimming.
+        public static bool AirSwimAsFlight;
+        // Show gear items the client has no data for (e.g. Capycraft transmog items like #171311) as a
+        // client-known item with the same display, looked up from the server's item template.
+        public static bool ResolveUnknownVisibleItems;
+        // Creature display the client has no model for (ERROR #132, reading 0x10) is shown as this one
+        // instead (default 3167 = Stormwind City Guard). 0 = off.
+        public static uint CreatureDisplayFallback;
 
         public static bool LoadAndVerifyFrom(ConfigurationParser config)
         {
@@ -88,6 +97,9 @@ namespace Framework
                 if (uint.TryParse(part, out var d)) DropGameObjectDisplays.Add(d);
             DropZeroEntryGameObjects = config.GetBoolean("DropZeroEntryGameObjects", false);
             DropNullDisplayGameObjects = config.GetBoolean("DropNullDisplayGameObjects", true);
+            AirSwimAsFlight = config.GetBoolean("AirSwimAsFlight", true);
+            ResolveUnknownVisibleItems = config.GetBoolean("ResolveUnknownVisibleItems", true);
+            CreatureDisplayFallback = (uint)config.GetInt("CreatureDisplayFallback", 3167);
 
             return VerifyConfig();
         }

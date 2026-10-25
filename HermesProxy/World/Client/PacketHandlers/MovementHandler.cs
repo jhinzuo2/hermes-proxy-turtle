@@ -53,9 +53,57 @@ namespace HermesProxy.World.Client
             moveUpdate.MoverGUID = packet.ReadPackedGuid().To128(GetSession().GameState);
             moveUpdate.MoveInfo = new();
             moveUpdate.MoveInfo.ReadMovementInfoLegacy(packet, GetSession().GameState);
+            // TEMP DIAGNOSTIC: server movement echoed for our own player (air-swim investigation).
+            if (Framework.Settings.LogCreatureCreates && moveUpdate.MoverGUID == GetSession().GameState.CurrentPlayerGuid)
+            {
+                string op = packet.GetUniversalOpcode(false).ToString();
+                if (op.Contains("SWIM") || op.Contains("FALL") || op.Contains("ASCEND") || op.Contains("DESCEND") || op.Contains("PITCH") || op.Contains("JUMP"))
+                    Log.Print(LogType.Server, $"[SelfMove] S>C {op} legacyFlags=0x{moveUpdate.MoveInfo.Flags:X} z={moveUpdate.MoveInfo.Position.Z:F2}");
+            }
+
+            // Capycraft "air swim" (e.g. the Caverns of Time drake): the server forces the Swimming flag on
+            // our own player and echoes our movement back. The modern client can't swim without water and
+            // loops stop-swim/fall/land, so give it real flight instead and keep the echo from reaching it.
+            Opcode universalOpcode = packet.GetUniversalOpcode(false);
+            if (Framework.Settings.AirSwimAsFlight &&
+                moveUpdate.MoverGUID == GetSession().GameState.CurrentPlayerGuid &&
+                universalOpcode != Opcode.MSG_MOVE_TELEPORT &&
+                universalOpcode != Opcode.MSG_MOVE_ROOT &&
+                universalOpcode != Opcode.MSG_MOVE_UNROOT &&
+                universalOpcode != Opcode.MSG_MOVE_WATER_WALK &&
+                universalOpcode != Opcode.MSG_MOVE_HOVER &&
+                universalOpcode != Opcode.MSG_MOVE_FEATHER_FALL &&
+                universalOpcode != Opcode.MSG_MOVE_GRAVITY_CHNG)
+            {
+                if (((MovementFlagWotLK)moveUpdate.MoveInfo.Flags).HasAnyFlag(MovementFlagWotLK.Swimming))
+                {
+                    if (!GetSession().GameState.IsInAirSwim)
+                        SetAirSwimFlight(true);
+                    return;
+                }
+                if (GetSession().GameState.IsInAirSwim)
+                    SetAirSwimFlight(false);
+            }
+
             moveUpdate.MoveInfo.Flags = (uint)(((MovementFlagWotLK)moveUpdate.MoveInfo.Flags).CastFlags<MovementFlagModern>());
             moveUpdate.MoveInfo.ValidateMovementInfo();
             SendPacketToClient(moveUpdate);
+        }
+
+        void SetAirSwimFlight(bool enable)
+        {
+            GetSession().GameState.IsInAirSwim = enable;
+            MoveSetFlag flag = new MoveSetFlag(enable ? Opcode.SMSG_MOVE_SET_CAN_FLY : Opcode.SMSG_MOVE_UNSET_CAN_FLY);
+            flag.MoverGUID = GetSession().GameState.CurrentPlayerGuid;
+            SendPacketToClient(flag);
+            Log.Print(LogType.Server, $"[AirSwim] {(enable ? "Air swim detected, enabling" : "Air swim ended, disabling")} client flight.");
+        }
+
+        [PacketHandler(Opcode.SMSG_DISMOUNT_RESULT)]
+        void HandleDismountResult(WorldPacket packet)
+        {
+            if (GetSession().GameState.IsInAirSwim)
+                SetAirSwimFlight(false);
         }
 
         [PacketHandler(Opcode.MSG_MOVE_KNOCK_BACK)]
@@ -184,6 +232,7 @@ namespace HermesProxy.World.Client
             teleport.Orientation = packet.ReadFloat();
             teleport.Reason = 4;
             GetSession().GameState.IsFirstEnterWorld = false;
+            GetSession().GameState.IsInAirSwim = false;
 
             if (GetSession().GameState.IsWaitingForNewWorld)
             {

@@ -51,6 +51,22 @@ namespace HermesProxy.World.Server
             if (opcode == 0)
                 opcode = Opcodes.GetOpcodeValueForVersion("MSG_MOVE_SET_FACING", Framework.Settings.ServerBuild);
 
+            uint clientFlags = movement.MoveInfo.Flags;
+            // While in air swim the client is really flying; the server expects swimming instead.
+            if (GetSession().GameState.IsInAirSwim)
+            {
+                var flags = (MovementFlagModern)movement.MoveInfo.Flags;
+                flags &= ~(MovementFlagModern.CanFly | MovementFlagModern.Flying | MovementFlagModern.Ascending |
+                           MovementFlagModern.Descending | MovementFlagModern.Falling | MovementFlagModern.FallingFar);
+                flags |= MovementFlagModern.Swimming;
+                movement.MoveInfo.Flags = (uint)flags;
+            }
+
+            // TEMP DIAGNOSTIC: own-player swim/fall/ascend movement sent to the server (air-swim investigation).
+            if (Framework.Settings.LogCreatureCreates &&
+                (opcodeName.Contains("SWIM") || opcodeName.Contains("FALL") || opcodeName.Contains("ASCEND") || opcodeName.Contains("DESCEND") || opcodeName.Contains("PITCH") || opcodeName.Contains("JUMP") || opcodeName.Contains("FLY")))
+                Log.Print(LogType.Server, $"[SelfMove] C>S {opcodeName} modernFlags=0x{clientFlags:X} sentFlags=0x{movement.MoveInfo.Flags:X} z={movement.MoveInfo.Position.Z:F2} sentAs=0x{opcode:X}");
+
             WorldPacket packet = new WorldPacket(opcode);
             if (LegacyVersion.AddedInVersion(ClientVersionBuild.V3_2_0_10192))
                 packet.WritePackedGuid(movement.Guid.To64());

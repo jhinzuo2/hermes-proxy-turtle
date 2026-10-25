@@ -142,18 +142,22 @@ namespace HermesProxy.World.Server.Packets
                     GameObjectData.StateAnimID = ModernVersion.GetGameObjectStateAnimId();
                 if (Guid.GetHighType() == HighGuidType.Transport)
                 {
+                    // A route missing from Transports.csv (e.g. Turtle's custom boats) still needs the transport
+                    // flags, map-object included: without them the client loads the ship as a regular model
+                    // and null-derefs (ERROR #132, reading 0x10). Same default as Ravencraft's proxy.
                     uint period = GameData.GetTransportPeriod((uint)ObjectData.EntryID);
-                    if (period != 0)
-                    {
-                        if (GameObjectData.Level == null)
-                            GameObjectData.Level = (int)period;
-                        if (ObjectData.DynamicFlags == null)
-                            ObjectData.DynamicFlags = (((uint)(((float)(CreateData.MoveInfo.TransportPathTimer % period) / (float)period) * System.UInt16.MaxValue)) << 16);
-                        GameObjectData.Flags = 1048616;
-                    }
-                    else if (ObjectData.DynamicFlags == null)
-                        ObjectData.DynamicFlags = ((CreateData.MoveInfo.TransportPathTimer % System.UInt16.MaxValue) << 16);
+                    if (period == 0)
+                        period = 300000;
+                    if (GameObjectData.Level == null)
+                        GameObjectData.Level = (int)period;
+                    if (ObjectData.DynamicFlags == null)
+                        ObjectData.DynamicFlags = (((uint)(((float)(CreateData.MoveInfo.TransportPathTimer % period) / (float)period) * System.UInt16.MaxValue)) << 16);
+                    GameObjectData.Flags = 1048616;
                 }
+                // Objects with a WMO model need the map-object flag too, for the same reason.
+                if (((GameObjectData.DisplayID != null && GameData.IsWmoGameObjectDisplay((uint)GameObjectData.DisplayID)) ||
+                     GameObjectData.TypeID == 14) && Guid.GetHighType() != HighGuidType.Transport)
+                    GameObjectData.Flags = (GameObjectData.Flags ?? 0) | 0x100000;
             }
             if (CorpseData != null)
             {
@@ -312,13 +316,18 @@ namespace HermesProxy.World.Server.Packets
                     (u.Type == UpdateTypeModern.CreateObject1 || u.Type == UpdateTypeModern.CreateObject2)
                     && u.Guid.GetObjectType() == ObjectType.GameObject
                     && (u.GameObjectData?.DisplayID == null || u.GameObjectData.DisplayID.Value == 0));
+            static string TraceItems(HermesProxy.World.Objects.VisibleItem[]? items) =>
+                items == null ? "-" : string.Join(",", System.Linq.Enumerable.Select(
+                    System.Linq.Enumerable.Where(items, i => i != null && i.ItemID != 0), i => i.ItemID));
             if (Framework.Settings.LogCreatureCreates)
                 foreach (var u in ObjectUpdates)
                     if (u.Type == UpdateTypeModern.CreateObject1 || u.Type == UpdateTypeModern.CreateObject2)
                     {
                         var ot = u.Guid.GetObjectType();
                         if (ot == ObjectType.Unit)
-                            Framework.Logging.Log.Print(Framework.Logging.LogType.Server, $"[CreateTrace] Unit entry={u.Guid.GetEntry()} displayId={u.UnitData?.DisplayID}");
+                            Framework.Logging.Log.Print(Framework.Logging.LogType.Server, $"[CreateTrace] Unit entry={u.Guid.GetEntry()} displayId={u.UnitData?.DisplayID} weapons={TraceItems(u.UnitData?.VirtualItems)}");
+                        else if (ot == ObjectType.Player || ot == ObjectType.ActivePlayer)
+                            Framework.Logging.Log.Print(Framework.Logging.LogType.Server, $"[CreateTrace] Player guid={u.Guid.GetLowValue()} displayId={u.UnitData?.DisplayID} gear={TraceItems(u.PlayerData?.VisibleItems)}");
                         else if (ot == ObjectType.GameObject)
                             Framework.Logging.Log.Print(Framework.Logging.LogType.Server, $"[CreateTrace] GameObject entry={u.Guid.GetEntry()} displayId={u.GameObjectData?.DisplayID}");
                     }

@@ -479,19 +479,33 @@ namespace HermesProxy.World.Client
                     reply2.Timestamp = (uint)Time.UnixTime;
                     SendPacketToClient(reply2);
                 }
+                ResendPendingVisibleItems((uint)entry.Key, false);
                 return;
             }
 
             ItemTemplate item = new ItemTemplate();
             item.ReadFromLegacyPacket((uint)entry.Key, packet);
 
-            SendItemUpdatesIfNeeded(item);
+            // Items we only queried to draw a gear slot (transmog ids) are shown as a client-known item, so
+            // the client needs no records for them. Pushing their appearance records anyway (custom displays
+            // included) crashed the client and got replayed on every login.
+            var state = GetSession().GameState;
+            bool onlyForVisibleItem = state.RequestedVisibleItemQueries.Contains((uint)entry.Key) &&
+                                      !state.RequestedItemHotfixes.Contains((uint)entry.Key) &&
+                                      !state.RequestedItemSparseHotfixes.Contains((uint)entry.Key);
+            if (!onlyForVisibleItem)
+                SendItemUpdatesIfNeeded(item);
             GameData.StoreItemTemplate((uint)entry.Key, item);
+            ResendPendingVisibleItems((uint)entry.Key, true);
         }
 
         void SendItemUpdatesIfNeeded(ItemTemplate item)
         {
             Server.Packets.HotFixMessage? reply;
+
+            // Diagnostic: a server DisplayID with no icon mapping is sent as icon 0 and shows as "?".
+            if (GameData.GetItemIconFileDataIdByDisplayId(item.DisplayID) == 0)
+                Log.Print(LogType.Storage, $"[ItemIcon] No icon mapping: entry {item.Entry} displayId {item.DisplayID} class {item.Class}/{item.SubClass} clientAppearance={GameData.ClientItemAppearances.Contains(item.Entry)}");
 
             reply = GameData.GenerateItemUpdateIfNeeded(item);
             if (reply != null)

@@ -170,6 +170,46 @@ namespace HermesProxy.World
             return 0;
         }
 
+        // Snapshot of the items the client has its own data for, taken at load time: ItemRecordsStore
+        // also grows at runtime with records we create, which the client may not have.
+        static HashSet<uint> ClientKnownItems = new();
+        // Legacy display -> a client item that is wearable and has an appearance row, so it can be drawn.
+        static Dictionary<(uint DisplayId, int InventoryType), uint> ClientGearByDisplayAndSlot = new();
+        static Dictionary<uint, uint> ClientGearByDisplay = new();
+
+        public static void BuildClientItemSnapshot()
+        {
+            ClientKnownItems = new HashSet<uint>(ItemRecordsStore.Keys);
+            ClientKnownItems.UnionWith(ClientItemAppearances);
+
+            var itemsWithAppearance = new HashSet<uint>();
+            foreach (var ima in ItemModifiedAppearanceStore.Values)
+                itemsWithAppearance.Add((uint)ima.ItemID);
+
+            foreach (var item in ItemDisplayIdStore)
+            {
+                if (!ItemRecordsStore.TryGetValue(item.Key, out var row) || row.InventoryType == 0 ||
+                    !itemsWithAppearance.Contains(item.Key))
+                    continue;
+                ClientGearByDisplayAndSlot.TryAdd((item.Value, row.InventoryType), item.Key);
+                ClientGearByDisplay.TryAdd(item.Value, item.Key);
+            }
+            Log.Print(LogType.Storage, $"{ClientGearByDisplay.Count} gear displays can stand in for unknown visible items.");
+        }
+
+        public static bool IsItemKnownToClient(uint entry)
+        {
+            return ClientKnownItems.Contains(entry);
+        }
+
+        // A wearable client item with this look (same inventory type preferred), drawn from the client's own data.
+        public static uint GetClientItemIdWithDisplayId(uint displayId, int inventoryType)
+        {
+            if (ClientGearByDisplayAndSlot.TryGetValue((displayId, inventoryType), out uint itemId))
+                return itemId;
+            return ClientGearByDisplay.TryGetValue(displayId, out itemId) ? itemId : 0;
+        }
+
         public static ItemAppearance GetItemAppearanceByDisplayId(uint displayId)
         {
             foreach (var item in ItemAppearanceStore)
@@ -354,6 +394,33 @@ namespace HermesProxy.World
             return new CreatureModelCollisionHeight(1.0f, 0, 0);
         }
 
+        // GameObject displays whose model is a WMO (from Ravencraft's proxy data).
+        static HashSet<uint> WmoGameObjectDisplays = new();
+
+        public static bool IsWmoGameObjectDisplay(uint displayId)
+        {
+            return WmoGameObjectDisplays.Contains(displayId);
+        }
+
+        public static void LoadWmoGameObjectDisplays()
+        {
+            var path = Path.Combine("CSV", $"GameObjectWmoDisplays{LegacyVersion.ExpansionVersion}.csv");
+            if (!File.Exists(path))
+                return;
+            foreach (var line in File.ReadAllLines(path).Skip(1))
+                if (uint.TryParse(line.Trim(), out var displayId))
+                    WmoGameObjectDisplays.Add(displayId);
+            Log.Print(LogType.Storage, $"{WmoGameObjectDisplays.Count} GameObject displays are WMOs.");
+        }
+
+        // Creature displays we send the client as hotfixes at login, on top of CreatureDisplayInfos.
+        static HashSet<uint> HotfixCreatureDisplayIds = new();
+
+        public static bool IsCreatureDisplayKnownToClient(uint displayId)
+        {
+            return CreatureDisplayInfos.ContainsKey(displayId) || HotfixCreatureDisplayIds.Contains(displayId);
+        }
+
         public static uint GetTransportPeriod(uint entry)
         {
             uint period;
@@ -516,6 +583,7 @@ namespace HermesProxy.World
             LoadCreatureDisplayInfo();
             LoadCreatureModelCollisionHeights();
             LoadTransports();
+            LoadWmoGameObjectDisplays();
             LoadAreaNames();
             LoadRaceFaction();
             LoadDispellSpells();
@@ -529,6 +597,7 @@ namespace HermesProxy.World
             LoadTaxiPathNodesGraph();
             LoadQuestBits();
             LoadHotfixes();
+            BuildClientItemSnapshot();
             Log.Print(LogType.Storage, "Finished loading data.");
         }
 
@@ -4073,6 +4142,7 @@ namespace HermesProxy.World
                     string[] fields = csvParser.ReadFields();
 
                     uint id = UInt32.Parse(fields[0]);
+                    HotfixCreatureDisplayIds.Add(id);
                     ushort modelId = UInt16.Parse(fields[1]);
                     ushort soundId = UInt16.Parse(fields[2]);
                     sbyte sizeClass = SByte.Parse(fields[3]);
