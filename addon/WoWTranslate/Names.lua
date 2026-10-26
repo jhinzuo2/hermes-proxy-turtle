@@ -80,7 +80,28 @@ local function ChannelFilter(_, _, ...)
     return false, unpack(args, 1, select("#", ...))
 end
 
+-- System lines the client builds itself ("[丶喀秋莎] has come online", friend/who notices):
+-- swap the [display] part of player links. The link keeps the real name.
+local function SystemFilter(_, _, msg, ...)
+    local db = WoWTranslateDB
+    if not (db.enabled and db.translateNames and db.translateSystemNames) then return false end
+    if type(msg) ~= "string" or not HasChinese(msg) or not msg:find("|Hplayer:", 1, true) then return false end
+    local changed = false
+    local newMsg = msg:gsub("(|Hplayer:[^|]*|h)%[([^%]]+)%](|h)", function(open, shown, close)
+        local raw = Ambiguate(shown, "none")
+        if not HasChinese(raw) then return nil end
+        local display = SenderDisplay(raw)
+        if not display then return nil end
+        changed = true
+        return open .. "[" .. display .. "]" .. close
+    end)
+    if not changed then return false end
+    return false, newMsg, ...
+end
+
 WT.AddLoadedHook(function()
+    ChatFrame_AddMessageEventFilter("CHAT_MSG_SYSTEM", SystemFilter)
+
     local original = GetColoredName
     GetColoredName = function(event, arg1, arg2, ...)
         local colored = original(event, arg1, arg2, ...)

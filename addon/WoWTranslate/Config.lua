@@ -1,4 +1,5 @@
 -- Settings window (/wt, or click the minimap button).
+-- Left: what the options do, each with a short description. Right: which chat gets translated.
 
 local _, WT = ...
 
@@ -6,32 +7,57 @@ local frame
 local refreshers = {}  -- functions that sync the widgets with WoWTranslateDB
 local channelRows = {}
 
-local function AddCheck(parent, label, x, y, get, set, tooltip)
+local LEFT_X, LEFT_W = 16, 360
+local RIGHT_X = 400
+local COL_IN, COL_OUT = RIGHT_X + 190, RIGHT_X + 260
+local channelTop = 0
+
+local function DB() return WoWTranslateDB end
+
+local function AddText(parent, text, x, y, font, width)
+    local fs = parent:CreateFontString(nil, "ARTWORK", font or "GameFontNormal")
+    fs:SetPoint("TOPLEFT", x, y)
+    fs:SetJustifyH("LEFT")
+    if width then fs:SetWidth(width) end
+    fs:SetText(text)
+    return fs
+end
+
+local function TextHeight(fs, fallback)
+    local h = fs.GetStringHeight and fs:GetStringHeight()
+    return (type(h) == "number" and h > 0) and h or fallback
+end
+
+local function AddSection(parent, title, x, y)
+    AddText(parent, title, x, y, "GameFontNormalLarge")
+    return y - 22
+end
+
+-- Checkbox with a label and, under it, a grey description. Returns the y below it.
+local function AddOption(parent, x, y, label, description, get, set)
     local cb = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
     cb:SetSize(24, 24)
     cb:SetPoint("TOPLEFT", x, y)
-    local text = cb:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    text:SetPoint("LEFT", cb, "RIGHT", 2, 1)
-    text:SetText(label or "")
-    cb.label = text
     cb:SetScript("OnClick", function(self) set(self:GetChecked() and true or false) end)
-    if tooltip then
-        cb:SetScript("OnEnter", function(self)
-            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-            GameTooltip:AddLine(tooltip, 1, 1, 1, true)
-            GameTooltip:Show()
-        end)
-        cb:SetScript("OnLeave", GameTooltip_Hide)
-    end
     table.insert(refreshers, function() cb:SetChecked(get()) end)
-    return cb
+
+    AddText(parent, label, x + 26, y - 5, "GameFontHighlight", LEFT_W - (x - LEFT_X) - 26)
+    y = y - 24
+    if description then
+        local desc = AddText(parent, description, x + 26, y, "GameFontDisableSmall", LEFT_W - (x - LEFT_X) - 26)
+        desc:SetTextColor(0.7, 0.7, 0.7)
+        y = y - TextHeight(desc, 24) - 6
+    end
+    return y
 end
 
-local function AddText(parent, text, x, y, font)
-    local fs = parent:CreateFontString(nil, "ARTWORK", font or "GameFontNormal")
-    fs:SetPoint("TOPLEFT", x, y)
-    fs:SetText(text)
-    return fs
+local function AddTableCheck(parent, x, y, get, set)
+    local cb = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
+    cb:SetSize(22, 22)
+    cb:SetPoint("TOPLEFT", x, y)
+    cb:SetScript("OnClick", function(self) set(self:GetChecked() and true or false) end)
+    table.insert(refreshers, function() cb:SetChecked(get()) end)
+    return cb
 end
 
 -- Joined chat channels ("World", "LookingForGroup", ...). GetChannelList returns
@@ -49,14 +75,12 @@ local function JoinedChannels()
     return list
 end
 
-local CHANNEL_TOP = -392
-
 local function RefreshChannels()
     for _, row in ipairs(channelRows) do
         row.name:Hide(); row.inCheck:Hide(); row.outCheck:Hide()
     end
-    local db = WoWTranslateDB
-    local y = CHANNEL_TOP
+    local db = DB()
+    local y = channelTop
     for i, name in ipairs(JoinedChannels()) do
         local row = channelRows[i]
         if not row then
@@ -69,9 +93,9 @@ local function RefreshChannels()
             channelRows[i] = row
         end
         local key = name:lower()
-        row.name:ClearAllPoints(); row.name:SetPoint("TOPLEFT", 40, y - 5); row.name:SetText("   " .. name)
-        row.inCheck:ClearAllPoints(); row.inCheck:SetPoint("TOPLEFT", 230, y)
-        row.outCheck:ClearAllPoints(); row.outCheck:SetPoint("TOPLEFT", 310, y)
+        row.name:ClearAllPoints(); row.name:SetPoint("TOPLEFT", RIGHT_X + 12, y - 5); row.name:SetText(name)
+        row.inCheck:ClearAllPoints(); row.inCheck:SetPoint("TOPLEFT", COL_IN, y)
+        row.outCheck:ClearAllPoints(); row.outCheck:SetPoint("TOPLEFT", COL_OUT, y)
         row.inCheck:SetChecked(not db.inChannelsOff[key])
         row.outCheck:SetChecked(not db.outChannelsOff[key])
         row.inCheck:SetScript("OnClick", function(self)
@@ -85,19 +109,113 @@ local function RefreshChannels()
         row.name:Show(); row.inCheck:Show(); row.outCheck:Show()
         y = y - 22
     end
-    frame:SetHeight(-y + 60)
+    return y
 end
+
+local leftBottom = 0
 
 local function Refresh()
     if not frame or not frame:IsShown() then return end
     for _, fn in ipairs(refreshers) do fn() end
     frame.status:SetText(WT.StatusText())
-    RefreshChannels()
+    local rightBottom = RefreshChannels()
+    frame:SetHeight(-math.min(leftBottom, rightBottom) + 50)
+end
+
+local function BuildLeft()
+    local db = DB
+    local x, y = LEFT_X, -58
+
+    y = AddSection(frame, "Translation", x, y)
+    y = AddOption(frame, x, y, "Translation on",
+        "Master switch for everything below. Off = chat passes through untouched. Macro: /wt toggle",
+        function() return db().enabled end, function(v) WT.SetEnabled(v) end)
+    y = AddOption(frame, x, y, "Incoming: Chinese -> English",
+        "Chinese chat from others is shown in English. A translated line arrives up to a second later. " ..
+        "Macro: /wt in toggle",
+        function() return db().incoming end, function(v) WT.SetIncoming(v) end)
+    y = AddOption(frame, x, y, "Outgoing: my English -> Chinese",
+        "What you type in English is sent in Chinese. Things you type in Chinese and .commands go out as typed. " ..
+        "Same as the OUT button. Macro: /wt out toggle",
+        function() return db().outgoing end, function(v) WT.SetOutgoing(v) end)
+
+    y = AddSection(frame, "Names", x, y - 6)
+    y = AddOption(frame, x, y, "Translate player names in chat",
+        "Chinese sender names are shown in English. Display only: clicking a name still whispers, invites or " ..
+        "targets the real player. A new name shows untranslated on its first message.",
+        function() return db().translateNames end, function(v) WT.Set("translateNames", v) end)
+    y = AddOption(frame, x + 20, y, "Keep the original name",
+        "[风之子 | Son Of The Wind] instead of [Son Of The Wind]. /wt names both | english",
+        function() return db().nameStyle == "both" end,
+        function(v) WT.Set("nameStyle", v and "both" or "english") end)
+    y = AddOption(frame, x + 20, y, "Also in system lines",
+        "\"[丶喀秋莎] has come online\" and other lines the game writes with a player name in them. /wt sysnames",
+        function() return db().translateSystemNames end, function(v) WT.Set("translateSystemNames", v) end)
+    y = AddOption(frame, x, y, "Translate channel names",
+        "[5. 世界] is shown as [5. World]. Display only: /5 still talks in the same channel. /wt channels",
+        function() return db().translateChannels end, function(v) WT.Set("translateChannels", v) end)
+
+    y = AddSection(frame, "Show the original", x, y - 6)
+    y = AddOption(frame, x, y, "On incoming messages",
+        "English (中文): handy to check a translation. /wt orig in toggle",
+        function() return db().showOriginalIn end, function(v) WT.Set("showOriginalIn", v) end)
+    y = AddOption(frame, x, y, "On my own messages",
+        "You always see what you typed; this adds the Chinese that was actually sent. /wt orig out toggle",
+        function() return db().showOriginalOut end, function(v) WT.Set("showOriginalOut", v) end)
+
+    y = AddSection(frame, "Display", x, y - 6)
+    y = AddOption(frame, x, y, "Same font and size for Chinese and English",
+        "The game draws any chat line with Chinese in it in a bigger font. This uses one font (Nowar WarSans) " ..
+        "for both, at your chat font size. /wt font",
+        function() return db().unifyChatFont end, function(v) WT.SetUnifyChatFont(v) end)
+    y = AddOption(frame, x, y, "Show the OUT button",
+        "Click it to switch outgoing translation. Shift-drag to move it. /wt button",
+        function() return db().showOutButton end, function(v) WT.Set("showOutButton", v) end)
+    y = AddOption(frame, x, y, "Show the minimap button",
+        "Opens this window. Drag it around the minimap.",
+        function() return not db().minimap.hide end, function(v) WT.SetMinimapShown(v) end)
+    return y
+end
+
+local function BuildRight()
+    local db = DB
+    local y = -58
+    y = AddSection(frame, "What gets translated", RIGHT_X, y)
+    local note = AddText(frame, "Incoming = what others write to you. Outgoing = what you write.",
+        RIGHT_X, y, "GameFontDisableSmall", 380)
+    note:SetTextColor(0.7, 0.7, 0.7)
+    y = y - TextHeight(note, 14) - 8
+
+    AddText(frame, "Chat", RIGHT_X + 12, y)
+    AddText(frame, "Incoming", COL_IN - 16, y)
+    AddText(frame, "Outgoing", COL_OUT - 14, y)
+    y = y - 20
+    for _, t in ipairs(WT.CHAT_TYPES) do
+        local code = t.code
+        AddText(frame, t.label, RIGHT_X + 12, y - 5, "GameFontHighlightSmall")
+        AddTableCheck(frame, COL_IN, y,
+            function() return db().inTypes[code] end,
+            function(v) db().inTypes[code] = v; WT.PushConfig() end)
+        if not t.incomingOnly then
+            AddTableCheck(frame, COL_OUT, y,
+                function() return db().outTypes[code] end,
+                function(v) db().outTypes[code] = v; WT.PushConfig() end)
+        end
+        y = y - 22
+    end
+
+    y = y - 10
+    AddText(frame, "Channels you are in", RIGHT_X + 12, y)
+    y = y - 16
+    local hint = AddText(frame, "Only used while \"Channels\" above is ticked.", RIGHT_X + 12, y,
+        "GameFontDisableSmall", 360)
+    hint:SetTextColor(0.7, 0.7, 0.7)
+    channelTop = y - TextHeight(hint, 12) - 4
 end
 
 local function Create()
     frame = CreateFrame("Frame", "WoWTranslateConfigFrame", UIParent, "BasicFrameTemplateWithInset")
-    frame:SetSize(420, 520)
+    frame:SetSize(LEFT_W + 420, 600)
     frame:SetPoint("CENTER")
     frame:SetFrameStrata("DIALOG")
     frame:SetMovable(true)
@@ -116,96 +234,39 @@ local function Create()
     frame.status:SetPoint("TOPRIGHT", -16, -32)
     frame.status:SetJustifyH("LEFT")
 
-    local db = function() return WoWTranslateDB end
-    local y = -60
-    AddCheck(frame, "Translation on (everything)", 16, y,
-        function() return db().enabled end, function(v) WT.SetEnabled(v) end,
-        "Master switch. Macro: /wt toggle")
-    y = y - 26
-    AddCheck(frame, "Incoming: Chinese -> English", 16, y,
-        function() return db().incoming end, function(v) WT.SetIncoming(v) end,
-        "Chat from others is shown in English. Macro: /wt in toggle")
-    y = y - 26
-    AddCheck(frame, "Outgoing: my English -> Chinese", 16, y,
-        function() return db().outgoing end, function(v) WT.SetOutgoing(v) end,
-        "What you type in English is sent in Chinese. Macro: /wt out toggle")
-    y = y - 26
-    AddCheck(frame, "Translate sender names in chat", 16, y,
-        function() return db().translateNames end, function(v) WT.Set("translateNames", v) end,
-        "Shows Chinese player names in English. Clicking the name still uses the real name.\n/wt names on | off")
-    y = y - 26
-    AddCheck(frame, "Keep the original name (Original | Translated)", 40, y,
-        function() return db().nameStyle == "both" end,
-        function(v) WT.Set("nameStyle", v and "both" or "english") end,
-        "Off: [Son Of The Wind]: message\nOn: [风之子 | Son Of The Wind]: message\n" ..
-        "Lines with Chinese in them use the client's bigger Chinese font.\n/wt names both | english")
-    y = y - 26
-    AddCheck(frame, "Translate channel names (世界 -> World)", 16, y,
-        function() return db().translateChannels end, function(v) WT.Set("translateChannels", v) end,
-        "Display only. /wt channels on | off")
-    y = y - 26
-    AddCheck(frame, "Same font and size for Chinese and English in chat", 16, y,
-        function() return db().unifyChatFont end, function(v) WT.SetUnifyChatFont(v) end,
-        "Uses the Nowar WarSans font (Latin + Chinese) at your chat font size, so lines with Chinese in them " ..
-        "are no longer bigger. /wt font on | off")
-    y = y - 26
-    AddCheck(frame, "Show the original text on incoming messages", 16, y,
-        function() return db().showOriginalIn end, function(v) WT.Set("showOriginalIn", v) end,
-        "English (中文)\n/wt orig in toggle")
-    y = y - 26
-    AddCheck(frame, "Show what was sent on my own messages", 16, y,
-        function() return db().showOriginalOut end, function(v) WT.Set("showOriginalOut", v) end,
-        "What you typed (the Chinese that was sent)\n/wt orig out toggle")
-    y = y - 26
-    AddCheck(frame, "Show the OUT button", 16, y,
-        function() return db().showOutButton end, function(v) WT.Set("showOutButton", v) end,
-        "On-screen button to switch outgoing translation. Shift-drag to move it.")
-    y = y - 26
-    AddCheck(frame, "Show the minimap button", 16, y,
-        function() return not db().minimap.hide end, function(v) WT.SetMinimapShown(v) end)
-
-    y = y - 36
-    AddText(frame, "Chat", 40, y)
-    AddText(frame, "Incoming", 214, y)
-    AddText(frame, "Outgoing", 294, y)
-    y = y - 18
-    for _, t in ipairs(WT.CHAT_TYPES) do
-        local code = t.code
-        AddText(frame, t.label, 40, y - 5, "GameFontHighlightSmall")
-        AddCheck(frame, nil, 230, y,
-            function() return db().inTypes[code] end,
-            function(v) db().inTypes[code] = v; WT.PushConfig() end)
-        AddCheck(frame, nil, 310, y,
-            function() return db().outTypes[code] end,
-            function(v) db().outTypes[code] = v; WT.PushConfig() end)
-        y = y - 22
-    end
-    CHANNEL_TOP = y - 4
+    leftBottom = BuildLeft()
+    BuildRight()
 
     local check = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    check:SetSize(110, 22)
+    check:SetSize(120, 22)
     check:SetPoint("BOTTOMLEFT", 16, 12)
     check:SetText("Check proxy")
     check:SetScript("OnClick", function()
         WT.proxyVersion = nil
+        frame.status:SetText("Checking...")
         WT.Hello()
-        if WT.proxyVersion == nil then frame.status:SetText("Checking...") end
     end)
 
+    local status = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    status:SetSize(120, 22)
+    status:SetPoint("LEFT", check, "RIGHT", 8, 0)
+    status:SetText("Proxy status")
+    status:SetScript("OnClick", function() WT.Send("?STATUS") end)
+
     local clear = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    clear:SetSize(110, 22)
-    clear:SetPoint("LEFT", check, "RIGHT", 8, 0)
+    clear:SetSize(120, 22)
+    clear:SetPoint("LEFT", status, "RIGHT", 8, 0)
     clear:SetText("Clear cache")
     clear:SetScript("OnClick", function()
         WT.Send("?CLEARCACHE")
         wipe(WoWTranslateDB.names)
     end)
-
-    local status = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    status:SetSize(110, 22)
-    status:SetPoint("LEFT", clear, "RIGHT", 8, 0)
-    status:SetText("Proxy status")
-    status:SetScript("OnClick", function() WT.Send("?STATUS") end)
+    clear:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine("Forget all saved translations and names, so they are translated again.", 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    clear:SetScript("OnLeave", GameTooltip_Hide)
 
     frame:SetScript("OnShow", Refresh)
     frame:RegisterEvent("CHANNEL_UI_UPDATE")

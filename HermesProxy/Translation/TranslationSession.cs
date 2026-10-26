@@ -38,6 +38,7 @@ namespace HermesProxy.Translation
             ['b'] = new[] { ChatMessageTypeModern.Battleground, ChatMessageTypeModern.BattlegroundLeader },
             ['c'] = new[] { ChatMessageTypeModern.Channel },
             ['e'] = new[] { ChatMessageTypeModern.Emote },
+            ['x'] = new[] { ChatMessageTypeModern.System },
         };
 
         readonly GlobalSessionData _session;
@@ -51,7 +52,8 @@ namespace HermesProxy.Translation
         bool _outgoing = false;
         bool _showOriginalIn = false;   // incoming: "English (中文)"
         bool _showOriginalOut = false;  // your echo: "what you typed (what was sent)"
-        HashSet<ChatMessageTypeModern> _inTypes = ExpandTypes("sywprgobc");
+        HashSet<ChatMessageTypeModern> _inTypes = ExpandTypes("sywprgobcx");
+        bool _guildMotd = true; // "m" in the incoming codes
         HashSet<ChatMessageTypeModern> _outTypes = ExpandTypes("sywprgobc");
         HashSet<string> _inChannelsOff = new(StringComparer.OrdinalIgnoreCase);
         HashSet<string> _outChannelsOff = new(StringComparer.OrdinalIgnoreCase);
@@ -152,6 +154,32 @@ namespace HermesProxy.Translation
             lock (_lock)
                 showOriginal = _showOriginalIn;
             return showOriginal ? translated + " (" + original + ")" : translated;
+        }
+
+        // Guild message of the day (login notice and Guild window). Not chat, so it isn't queued:
+        // send() gets the translated text, or the original when it's off or the translation fails.
+        public void TranslateGuildText(string text, Action<string> send)
+        {
+            text = (text ?? "").TrimEnd('\0');
+            bool wanted;
+            lock (_lock)
+                wanted = _on && _incoming && _guildMotd;
+            if (!wanted || !TranslationText.ContainsChinese(text))
+            {
+                send(text);
+                return;
+            }
+            TranslateIncomingAsync(text).ContinueWith(t =>
+            {
+                try
+                {
+                    send(t.Status == TaskStatus.RanToCompletion && t.Result != null ? t.Result : text);
+                }
+                catch (Exception ex)
+                {
+                    Log.Print(LogType.Error, $"[Translate] Sending guild text failed: {ex.Message}");
+                }
+            }, TaskScheduler.Default);
         }
 
         // ---- Outgoing (client -> server) ----
@@ -274,7 +302,7 @@ namespace HermesProxy.Translation
 
         // k=v pairs separated by ';':
         //   on, in, out = 0/1; oi, oo = also show the original text, incoming / on your own echo;
-        //   it, ot = chat type codes (see TypeGroups);
+        //   it, ot = chat type codes (see TypeGroups; "m" in it = guild message of the day);
         //   xi, xo = comma-separated channel names to skip (incoming / outgoing).
         void ApplyConfig(string config)
         {
@@ -295,7 +323,7 @@ namespace HermesProxy.Translation
                         case "orig": _showOriginalIn = _showOriginalOut = value == "1"; break; // addon v2.0.0
                         case "oi": _showOriginalIn = value == "1"; break;
                         case "oo": _showOriginalOut = value == "1"; break;
-                        case "it": _inTypes = ExpandTypes(value); break;
+                        case "it": _inTypes = ExpandTypes(value); _guildMotd = value.Contains('m'); break;
                         case "ot": _outTypes = ExpandTypes(value); break;
                         case "xi": _inChannelsOff = ParseChannelList(value); break;
                         case "xo": _outChannelsOff = ParseChannelList(value); break;
@@ -331,14 +359,20 @@ namespace HermesProxy.Translation
             SendToClient(_session, chat);
         }
 
-        // Sends from any thread. Packets for a session whose socket is gone are dropped
-        // quietly instead of tripping the disconnect path a second time.
-        public static void SendToClient(GlobalSessionData session, ChatPkt chat)
+        // Sends from any thread. Before the world socket exists the normal path queues the
+        // packet; packets for a session whose socket is gone are dropped quietly instead of
+        // tripping the disconnect path a second time.
+        public static void SendToClient(GlobalSessionData session, ServerPacket packet)
         {
             var socket = session.InstanceSocket;
-            if (socket == null || !socket.IsOpen())
+            if (socket == null)
+            {
+                session.WorldClient?.SendPacketToClient(packet);
                 return;
-            socket.SendPacket(chat);
+            }
+            if (!socket.IsOpen())
+                return;
+            socket.SendPacket(packet);
         }
 
         // Keeps chat in arrival order: an entry is sent only when it and everything ahead

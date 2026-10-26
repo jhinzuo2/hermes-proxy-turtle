@@ -22,6 +22,8 @@ WT.CHAT_TYPES = {
     { code = "b", label = "Battleground" },
     { code = "e", label = "Emote" },
     { code = "c", label = "Channels (World etc.)" },
+    { code = "x", label = "System messages", incomingOnly = true },
+    { code = "m", label = "Guild message of the day", incomingOnly = true },
 }
 
 local DEFAULTS = {
@@ -31,11 +33,12 @@ local DEFAULTS = {
     translateNames = true,
     nameStyle = "english",  -- "english" = Translated, "both" = Original | Translated
     translateChannels = true,
+    translateSystemNames = true, -- "[丶喀秋莎] has come online"
     unifyChatFont = true,    -- same font/size for Chinese and English in chat (ChatFont.lua)
     showOriginalIn = false,  -- incoming: "English (中文)"
     showOriginalOut = false, -- your own messages: "what you typed (what was sent)"
     showOutButton = true,
-    inTypes = { s = true, y = true, w = true, p = true, r = true, g = true, o = true, b = true, e = false, c = true },
+    inTypes = { s = true, y = true, w = true, p = true, r = true, g = true, o = true, b = true, e = false, c = true, x = true, m = true },
     outTypes = { s = true, y = true, w = true, p = true, r = true, g = true, o = true, b = true, e = false, c = true },
     inChannelsOff = {},  -- lower-case channel name -> true
     outChannelsOff = {},
@@ -215,6 +218,7 @@ local function Help()
     WT.Print("  /wt in on | off | toggle - incoming CN->EN")
     WT.Print("  /wt names on | off | both | english - sender names")
     WT.Print("  /wt channels on | off - channel names (世界 -> World)")
+    WT.Print("  /wt sysnames on | off - names in system lines (X has come online)")
     WT.Print("  /wt orig in | out on | off | toggle - also show the original text")
     WT.Print("  /wt button on | off - the OUT button on screen")
     WT.Print("  /wt font on | off - same font and size for Chinese and English in chat")
@@ -260,6 +264,11 @@ SlashCmdList.WOWTRANSLATE = function(input)
         if v == nil then return Help() end
         WT.Set("translateChannels", v)
         WT.Print("channel names " .. (v and "translated" or "as is"))
+    elseif cmd == "sysnames" then
+        local v = ParseSwitch(arg, db.translateSystemNames)
+        if v == nil then return Help() end
+        WT.Set("translateSystemNames", v)
+        WT.Print("names in system lines " .. (v and "translated" or "as is"))
     elseif cmd == "orig" or cmd == "original" then
         local which, sw = strsplit(" ", arg, 2)
         local key = (which == "in" and "showOriginalIn") or (which == "out" and "showOriginalOut") or nil

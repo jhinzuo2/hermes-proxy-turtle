@@ -59,6 +59,15 @@ namespace HermesProxy.World.Client
                 {
                     GuildEventMotd motd = new GuildEventMotd();
                     motd.MotdText = strings[0];
+                    if (Translation.TranslationService.IsEnabled)
+                    {
+                        GetSession().ChatTranslation.TranslateGuildText(motd.MotdText, text =>
+                        {
+                            motd.MotdText = text;
+                            Translation.TranslationSession.SendToClient(GetSession(), motd);
+                        });
+                        break;
+                    }
                     SendPacketToClient(motd);
                     break;
                 }
@@ -325,6 +334,15 @@ namespace HermesProxy.World.Client
                 member.Note = packet.ReadCString();
                 member.OfficerNote = packet.ReadCString();
                 guild.MemberData.Add(member);
+            }
+            if (Translation.TranslationService.IsEnabled)
+            {
+                GetSession().ChatTranslation.TranslateGuildText(guild.WelcomeText, text =>
+                {
+                    guild.WelcomeText = text;
+                    Translation.TranslationSession.SendToClient(GetSession(), guild);
+                });
+                return;
             }
             SendPacketToClient(guild);
         }
