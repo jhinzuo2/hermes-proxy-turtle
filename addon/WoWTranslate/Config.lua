@@ -151,6 +151,35 @@ local function BuildLeft()
         "Same as the OUT button. Macro: /wt out toggle",
         function() return db().outgoing end, function(v) WT.SetOutgoing(v) end)
 
+    y = AddOption(x, y, "Pause while AFK",
+        "No incoming translation while you are flagged AFK, so a busy channel doesn't keep the translation " ..
+        "service busy. Starts again when you're back. /wt afk on | off",
+        function() return db().pauseWhileAfk end, function(v) WT.Set("pauseWhileAfk", v) end)
+
+    -- Translation service, switched live (no proxy restart).
+    AddText(content, "Translation service", x + 24, y - 4, "GameFontHighlightSmall")
+    local dd = CreateFrame("Frame", "WoWTranslateBackendDropDown", content, "UIDropDownMenuTemplate")
+    dd:SetPoint("TOPLEFT", x + 130, y + 2)
+    UIDropDownMenu_SetWidth(dd, 130)
+    UIDropDownMenu_Initialize(dd, function()
+        for _, name in ipairs(WT.BACKENDS) do
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = name
+            info.checked = (WT.proxyBackend == name)
+            info.func = function()
+                WT.SetBackend(name)
+                UIDropDownMenu_SetText(dd, name)
+            end
+            UIDropDownMenu_AddButton(info)
+        end
+    end)
+    table.insert(refreshers, function() UIDropDownMenu_SetText(dd, WT.proxyBackend or "?") end)
+    y = y - 28
+    local note = AddText(content, "auto = try them in order until one works. Pick one when the current one " ..
+        "is slow or rate limited. Applies at once, kept across restarts. /wt provider", x + 24, y, descFont,
+        LEFT_W - 24)
+    y = y - TextHeight(note, 22) - 4
+
     y = AddSection("Names", x, y - 6)
     y = AddOption(x, y, "Translate player names in chat",
         "Chinese sender names are shown in English. Display only: clicking a name still whispers, invites or " ..
@@ -166,6 +195,10 @@ local function BuildLeft()
     y = AddOption(x + 18, y, "Also in player tooltips",
         "Mouse over a player: name, guild and guild rank in English. /wt tooltip",
         function() return db().translateTooltips end, function(v) WT.Set("translateTooltips", v) end)
+    y = AddOption(x + 18, y, "Also in the friends list and guild window",
+        "Friend and guild member names (and guild ranks) in English. Display only: whisper, invite and the " ..
+        "right-click menu still use the real name. /wt social",
+        function() return db().translateSocial end, function(v) WT.SetTranslateSocial(v) end)
     y = AddOption(x, y, "Translate channel names",
         "[5. 世界] is shown as [5. World]. Display only: /5 still talks in the same channel. /wt channels",
         function() return db().translateChannels end, function(v) WT.Set("translateChannels", v) end)

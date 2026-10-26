@@ -64,6 +64,15 @@ namespace HermesProxy.Translation
 
         public static void ClearCache() => _cache?.Clear();
 
+        // Switches the translation service for the whole proxy (all sessions), effective immediately.
+        public static bool SetBackend(string backend)
+        {
+            if (_translator == null || !_translator.SetBackend(backend))
+                return false;
+            Log.Print(LogType.Server, $"[Translate] Backend switched to {_translator.Mode}");
+            return true;
+        }
+
         static readonly Regex PlaceholderSplit = new(@"( http://ph\.wt/\d+ )", RegexOptions.Compiled);
 
         // Glossary substitution on the text between placeholders only, so terms like "wt"

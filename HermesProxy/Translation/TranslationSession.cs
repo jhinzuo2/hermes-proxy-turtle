@@ -54,6 +54,7 @@ namespace HermesProxy.Translation
         bool _showOriginalOut = false;  // your echo: "what you typed (what was sent)"
         HashSet<ChatMessageTypeModern> _inTypes = ExpandTypes("sywprgobcx");
         bool _guildMotd = true; // "m" in the incoming codes
+        bool _afk = false;      // addon: you are AFK and asked to pause incoming translation then
         HashSet<ChatMessageTypeModern> _outTypes = ExpandTypes("sywprgobc");
         HashSet<string> _inChannelsOff = new(StringComparer.OrdinalIgnoreCase);
         HashSet<string> _outChannelsOff = new(StringComparer.OrdinalIgnoreCase);
@@ -89,7 +90,7 @@ namespace HermesProxy.Translation
         {
             lock (_lock)
             {
-                if (!_on || !_incoming || !_inTypes.Contains(type))
+                if (!_on || !_incoming || _afk || !_inTypes.Contains(type))
                     return false;
                 if (type == ChatMessageTypeModern.Channel && _inChannelsOff.Contains(BaseChannelName(channelName)))
                     return false;
@@ -163,7 +164,7 @@ namespace HermesProxy.Translation
             text = (text ?? "").TrimEnd('\0');
             bool wanted;
             lock (_lock)
-                wanted = _on && _incoming && _guildMotd;
+                wanted = _on && _incoming && !_afk && _guildMotd;
             if (!wanted || !TranslationText.ContainsChinese(text))
             {
                 send(text);
@@ -283,6 +284,13 @@ namespace HermesProxy.Translation
                 case "STATUS":
                     Reply("!STATUS|" + StatusLine());
                     break;
+                case "BACKEND":
+                    // ?BACKEND|gtx (or auto) -> !BACKEND|ok|<mode>, or !BACKEND|error|<mode>|<valid names>
+                    if (parts.Length > 1 && TranslationService.SetBackend(parts[1]))
+                        Reply("!BACKEND|ok|" + TranslationService.BackendMode);
+                    else
+                        Reply("!BACKEND|error|" + TranslationService.BackendMode + "|auto," + string.Join(",", FreeTranslator.BackendNames));
+                    break;
                 case "CLEARCACHE":
                     TranslationService.ClearCache();
                     Reply("!CLEARCACHE|ok");
@@ -301,7 +309,7 @@ namespace HermesProxy.Translation
         }
 
         // k=v pairs separated by ';':
-        //   on, in, out = 0/1; oi, oo = also show the original text, incoming / on your own echo;
+        //   on, in, out, afk = 0/1 (afk = pause incoming while you are AFK); oi, oo = also show the original text, incoming / on your own echo;
         //   it, ot = chat type codes (see TypeGroups; "m" in it = guild message of the day);
         //   xi, xo = comma-separated channel names to skip (incoming / outgoing).
         void ApplyConfig(string config)
@@ -323,6 +331,7 @@ namespace HermesProxy.Translation
                         case "orig": _showOriginalIn = _showOriginalOut = value == "1"; break; // addon v2.0.0
                         case "oi": _showOriginalIn = value == "1"; break;
                         case "oo": _showOriginalOut = value == "1"; break;
+                        case "afk": _afk = value == "1"; break;
                         case "it": _inTypes = ExpandTypes(value); _guildMotd = value.Contains('m'); break;
                         case "ot": _outTypes = ExpandTypes(value); break;
                         case "xi": _inChannelsOff = ParseChannelList(value); break;

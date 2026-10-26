@@ -21,7 +21,7 @@ namespace HermesProxy.Translation
         static readonly TimeSpan EdgeTokenLifetime = TimeSpan.FromMinutes(8);
 
         readonly HttpClient _http;
-        readonly string _pinnedBackend; // null = auto chain
+        volatile string _pinnedBackend; // null = auto chain; switchable live from the addon
         readonly SemaphoreSlim _concurrency = new(4);
         readonly Dictionary<string, DateTime> _cooldownUntil = new();
         readonly object _lock = new();
@@ -51,15 +51,28 @@ namespace HermesProxy.Translation
 
         public string Mode => _pinnedBackend ?? "auto";
 
+        // "auto" or one of BackendNames. Clears the rate-limit pauses so the new choice is tried at once.
+        public bool SetBackend(string backend)
+        {
+            backend = (backend ?? "").Trim().ToLowerInvariant();
+            if (backend != "auto" && Array.IndexOf(BackendNames, backend) < 0)
+                return false;
+            _pinnedBackend = backend == "auto" ? null : backend;
+            lock (_lock)
+                _cooldownUntil.Clear();
+            return true;
+        }
+
         // sourceLang/targetLang: "zh" or "en". Returns null on failure (LastError says why).
         public async Task<string> TranslateAsync(string text, string sourceLang, string targetLang, CancellationToken token)
         {
             await _concurrency.WaitAsync(token).ConfigureAwait(false);
             try
             {
+                string pinned = _pinnedBackend;
                 foreach (string backend in BackendNames)
                 {
-                    if (_pinnedBackend != null && backend != _pinnedBackend)
+                    if (pinned != null && backend != pinned)
                         continue;
                     if (IsCoolingDown(backend))
                         continue;

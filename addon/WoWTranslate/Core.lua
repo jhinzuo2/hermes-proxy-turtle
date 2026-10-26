@@ -35,6 +35,9 @@ local DEFAULTS = {
     translateChannels = true,
     translateSystemNames = true, -- "[丶喀秋莎] has come online"
     translateTooltips = true,    -- player tooltips: name, guild, rank
+    translateSocial = true,      -- friends list and guild window names
+    pauseWhileAfk = false,       -- no incoming translation while you are AFK
+    backend = nil,               -- translation service chosen in-game; nil = the proxy's config
     unifyChatFont = true,    -- same font/size for Chinese and English in chat (ChatFont.lua)
     showOriginalIn = false,  -- incoming: "English (中文)"
     showOriginalOut = false, -- your own messages: "what you typed (what was sent)"
@@ -62,6 +65,10 @@ end
 WT.proxyVersion = nil  -- set once the proxy answers ?HELLO
 WT.proxyBackend = nil
 WT.lastStatus = nil
+WT.afk = false         -- you are flagged AFK right now
+
+-- Services the proxy can use ("auto" = try them in this order until one works).
+WT.BACKENDS = { "auto", "gtx", "tw-ob", "dict-chrome-ex", "edge-translate" }
 
 function WT.Print(msg)
     DEFAULT_CHAT_FRAME:AddMessage("|cff33ccff[WoWTranslate]|r " .. tostring(msg))
@@ -104,6 +111,7 @@ function WT.PushConfig()
         ";out=" .. Bool(db.outgoing) ..
         ";oi=" .. Bool(db.showOriginalIn) ..
         ";oo=" .. Bool(db.showOriginalOut) ..
+        ";afk=" .. Bool(db.pauseWhileAfk and WT.afk) ..
         ";it=" .. CodesFrom(db.inTypes) ..
         ";ot=" .. CodesFrom(db.outTypes) ..
         ";xi=" .. NamesFrom(db.inChannelsOff) ..
@@ -129,6 +137,9 @@ function WT.StatusText()
     end
     local db = WoWTranslateDB
     local state = db.enabled and "|cff55ff55ON|r" or "|cffff5555OFF|r"
+    if db.enabled and db.pauseWhileAfk and WT.afk then
+        state = state .. " |cffffff00(incoming paused: AFK)|r"
+    end
     return "Proxy connected (backend " .. (WT.proxyBackend or "?") .. ") - translation " .. state ..
         ", incoming " .. (db.incoming and "on" or "off") .. ", outgoing " .. (db.outgoing and "on" or "off")
 end
@@ -144,6 +155,10 @@ handlers.HELLO = function(version, backend)
     WT.proxyVersion = version
     WT.proxyBackend = backend
     WT.PushConfig()
+    -- A service picked in-game wins over the proxy's config, also after a proxy restart.
+    if WoWTranslateDB.backend and WoWTranslateDB.backend ~= backend then
+        WT.Send("?BACKEND|" .. WoWTranslateDB.backend)
+    end
     if first then
         WT.Print("connected to proxy translation (backend " .. tostring(backend) .. "). /wt for options.")
     end
@@ -154,6 +169,23 @@ handlers.STATUS = function(...)
     WT.lastStatus = strjoin("|", ...)
     WT.Print("proxy: " .. WT.lastStatus)
     WT.UpdateStatusText()
+end
+
+handlers.BACKEND = function(result, mode)
+    WT.proxyBackend = mode
+    if result == "ok" then
+        WT.Print("translation service: |cff55ff55" .. tostring(mode) .. "|r")
+    else
+        WT.Print("|cffff5555unknown service.|r Use one of: " .. table.concat(WT.BACKENDS, ", "))
+    end
+    WT.UpdateStatusText()
+end
+
+-- name: one of WT.BACKENDS, or nil to go back to whatever the proxy's config says
+-- (that one only applies again after the proxy restarts; "auto" is the usual choice).
+function WT.SetBackend(name)
+    WoWTranslateDB.backend = name
+    if name then WT.Send("?BACKEND|" .. name) end
 end
 
 handlers.CLEARCACHE = function()
@@ -221,9 +253,12 @@ local function Help()
     WT.Print("  /wt channels on | off - channel names (世界 -> World)")
     WT.Print("  /wt sysnames on | off - names in system lines (X has come online)")
     WT.Print("  /wt tooltip on | off - player name, guild and rank in tooltips")
+    WT.Print("  /wt social on | off - names in the friends list and guild window")
     WT.Print("  /wt orig in | out on | off | toggle - also show the original text")
     WT.Print("  /wt button on | off - the OUT button on screen")
     WT.Print("  /wt font on | off - same font and size for Chinese and English in chat")
+    WT.Print("  /wt provider [auto | gtx | tw-ob | dict-chrome-ex | edge-translate] - translation service, switched live")
+    WT.Print("  /wt afk on | off - pause incoming translation while you are AFK")
     WT.Print("  /wt status | clearcache | reconnect")
 end
 
@@ -276,6 +311,11 @@ SlashCmdList.WOWTRANSLATE = function(input)
         if v == nil then return Help() end
         WT.Set("translateTooltips", v)
         WT.Print("player tooltips " .. (v and "translated" or "as is"))
+    elseif cmd == "social" or cmd == "friends" or cmd == "guild" then
+        local v = ParseSwitch(arg, db.translateSocial)
+        if v == nil then return Help() end
+        WT.SetTranslateSocial(v)
+        WT.Print("friends list / guild window names " .. (v and "translated" or "as is"))
     elseif cmd == "orig" or cmd == "original" then
         local which, sw = strsplit(" ", arg, 2)
         local key = (which == "in" and "showOriginalIn") or (which == "out" and "showOriginalOut") or nil
@@ -293,6 +333,22 @@ SlashCmdList.WOWTRANSLATE = function(input)
         if v == nil then return Help() end
         WT.SetUnifyChatFont(v)
         WT.Print("chat font " .. (v and "unified (WarSans)" or "back to the client's own"))
+    elseif cmd == "provider" or cmd == "backend" or cmd == "service" then
+        if arg == "" then
+            WT.Print("translation service now: " .. tostring(WT.proxyBackend or "?") ..
+                ". Choose with /wt provider " .. table.concat(WT.BACKENDS, " | "))
+            return
+        end
+        if not tContains(WT.BACKENDS, arg) then
+            WT.Print("|cffff5555unknown service.|r Use one of: " .. table.concat(WT.BACKENDS, ", "))
+            return
+        end
+        WT.SetBackend(arg)
+    elseif cmd == "afk" then
+        local v = ParseSwitch(arg, db.pauseWhileAfk)
+        if v == nil then return Help() end
+        WT.Set("pauseWhileAfk", v)
+        WT.Print("pause while AFK " .. (v and "on" or "off"))
     elseif cmd == "status" then
         WT.Print(WT.StatusText())
         if WT.proxyVersion then WT.Send("?STATUS") end
@@ -314,6 +370,7 @@ local events = CreateFrame("Frame")
 events:RegisterEvent("ADDON_LOADED")
 events:RegisterEvent("PLAYER_ENTERING_WORLD")
 events:RegisterEvent("CHAT_MSG_ADDON")
+events:RegisterEvent("PLAYER_FLAGS_CHANGED")
 events:SetScript("OnEvent", function(_, event, ...)
     if event == "ADDON_LOADED" then
         if ... ~= ADDON then return end
@@ -327,7 +384,17 @@ events:SetScript("OnEvent", function(_, event, ...)
         if WT.OnLoaded then WT.OnLoaded() end
     elseif event == "PLAYER_ENTERING_WORLD" then
         -- Every login, reload and zone-in: the proxy may be a fresh session.
+        WT.afk = UnitIsAFK("player") and true or false
         WT.Hello()
+    elseif event == "PLAYER_FLAGS_CHANGED" then
+        local afk = UnitIsAFK("player") and true or false
+        if afk ~= WT.afk then
+            WT.afk = afk
+            if WoWTranslateDB.pauseWhileAfk then
+                WT.PushConfig()
+                WT.UpdateStatusText()
+            end
+        end
     elseif event == "CHAT_MSG_ADDON" then
         OnAddonMessage(...)
     end

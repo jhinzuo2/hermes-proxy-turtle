@@ -57,6 +57,7 @@ local function Lookup(raw)
 end
 
 WT.HasChinese = HasChinese
+WT.LookupName = Lookup -- English for a Chinese name, or nil (and asks the proxy)
 
 local function SenderDisplay(raw)
     local english = Lookup(raw)
