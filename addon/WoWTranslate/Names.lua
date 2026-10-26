@@ -31,11 +31,16 @@ local function EscapePattern(s)
     return (s:gsub("([%(%)%.%%%+%-%*%?%[%]%^%$])", "%%%1"))
 end
 
+local nameListeners = {}
+-- fn(raw, english) runs when the proxy answers a name (e.g. to refresh an open tooltip).
+function WT.AddNameListener(fn) table.insert(nameListeners, fn) end
+
 function WT.OnNameTranslated(raw, english)
     if raw and english and english ~= "" then
         WoWTranslateDB.names[raw] = english
     end
     pending[raw] = nil
+    for _, fn in ipairs(nameListeners) do fn(raw, english) end
 end
 
 -- English for a Chinese name, or nil (then asks the proxy, so a later line has it).
@@ -51,6 +56,8 @@ local function Lookup(raw)
     return nil
 end
 
+WT.HasChinese = HasChinese
+
 local function SenderDisplay(raw)
     local english = Lookup(raw)
     if not english then return nil end
@@ -59,6 +66,7 @@ local function SenderDisplay(raw)
     end
     return english
 end
+WT.NameDisplay = SenderDisplay -- "English" or "原名 | English" per the name style; nil = not known yet
 
 -- Replaces each run of non-ASCII text ("世界", "暴风城") with its English name.
 local function TranslateChannelText(text)

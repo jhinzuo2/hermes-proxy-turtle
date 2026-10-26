@@ -163,6 +163,9 @@ local function BuildLeft()
     y = AddOption(x + 18, y, "Also in system lines",
         "\"丶喀秋莎 has come online / has gone offline\" and other lines the game writes with a name. /wt sysnames",
         function() return db().translateSystemNames end, function(v) WT.Set("translateSystemNames", v) end)
+    y = AddOption(x + 18, y, "Also in player tooltips",
+        "Mouse over a player: name, guild and guild rank in English. /wt tooltip",
+        function() return db().translateTooltips end, function(v) WT.Set("translateTooltips", v) end)
     y = AddOption(x, y, "Translate channel names",
         "[5. 世界] is shown as [5. World]. Display only: /5 still talks in the same channel. /wt channels",
         function() return db().translateChannels end, function(v) WT.Set("translateChannels", v) end)

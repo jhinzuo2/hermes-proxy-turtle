@@ -34,6 +34,7 @@ local DEFAULTS = {
     nameStyle = "english",  -- "english" = Translated, "both" = Original | Translated
     translateChannels = true,
     translateSystemNames = true, -- "[丶喀秋莎] has come online"
+    translateTooltips = true,    -- player tooltips: name, guild, rank
     unifyChatFont = true,    -- same font/size for Chinese and English in chat (ChatFont.lua)
     showOriginalIn = false,  -- incoming: "English (中文)"
     showOriginalOut = false, -- your own messages: "what you typed (what was sent)"
@@ -219,6 +220,7 @@ local function Help()
     WT.Print("  /wt names on | off | both | english - sender names")
     WT.Print("  /wt channels on | off - channel names (世界 -> World)")
     WT.Print("  /wt sysnames on | off - names in system lines (X has come online)")
+    WT.Print("  /wt tooltip on | off - player name, guild and rank in tooltips")
     WT.Print("  /wt orig in | out on | off | toggle - also show the original text")
     WT.Print("  /wt button on | off - the OUT button on screen")
     WT.Print("  /wt font on | off - same font and size for Chinese and English in chat")
@@ -269,6 +271,11 @@ SlashCmdList.WOWTRANSLATE = function(input)
         if v == nil then return Help() end
         WT.Set("translateSystemNames", v)
         WT.Print("names in system lines " .. (v and "translated" or "as is"))
+    elseif cmd == "tooltip" or cmd == "tooltips" then
+        local v = ParseSwitch(arg, db.translateTooltips)
+        if v == nil then return Help() end
+        WT.Set("translateTooltips", v)
+        WT.Print("player tooltips " .. (v and "translated" or "as is"))
     elseif cmd == "orig" or cmd == "original" then
         local which, sw = strsplit(" ", arg, 2)
         local key = (which == "in" and "showOriginalIn") or (which == "out" and "showOriginalOut") or nil
