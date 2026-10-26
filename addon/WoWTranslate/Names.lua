@@ -85,7 +85,7 @@ end
 local function SystemFilter(_, _, msg, ...)
     local db = WoWTranslateDB
     if not (db.enabled and db.translateNames and db.translateSystemNames) then return false end
-    if type(msg) ~= "string" or not HasChinese(msg) or not msg:find("|Hplayer:", 1, true) then return false end
+    if type(msg) ~= "string" or not HasChinese(msg) then return false end
     local changed = false
     local newMsg = msg:gsub("(|Hplayer:[^|]*|h)%[([^%]]+)%](|h)", function(open, shown, close)
         local raw = Ambiguate(shown, "none")
@@ -95,6 +95,16 @@ local function SystemFilter(_, _, msg, ...)
         changed = true
         return open .. "[" .. display .. "]" .. close
     end)
+    -- Lines without a link ("丶喀秋莎 has gone offline."): a Chinese run in a short system
+    -- line is taken as a name. Longer lines are server text, which the proxy translates.
+    if not changed and not msg:find("|H", 1, true) and #msg <= 120 then
+        newMsg = msg:gsub("[\128-\255]+", function(run)
+            if not HasChinese(run) then return nil end
+            local display = SenderDisplay(run)
+            if display then changed = true end
+            return display
+        end)
+    end
     if not changed then return false end
     return false, newMsg, ...
 end
