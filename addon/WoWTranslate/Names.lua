@@ -1,9 +1,26 @@
--- Sender names in chat: "风之子" is shown as "Son Of The Wind". Display only: the player
--- link underneath keeps the real name, so whisper, invite and target still work.
+-- Names in chat, display only:
+--  * sender names: "风之子" shows as "Son Of The Wind", or "风之子 | Son Of The Wind". The player
+--    link underneath keeps the real name, so whisper, invite and target still work.
+--  * channel names: "[5. 世界]" shows as "[5. World]". Typing into the channel is unchanged.
+--
+-- This client draws a whole chat line in its (much bigger) CJK font as soon as the line has one
+-- Chinese character in it, so English names and channels also keep line sizes even.
 
 local _, WT = ...
 
 local pending = {}  -- name -> true while the proxy is translating it
+
+-- Common Chinese-client channel names; anything else is asked from the proxy like a name.
+local CHANNELS = {
+    ["世界"] = "World",
+    ["综合"] = "General",
+    ["交易"] = "Trade",
+    ["本地防务"] = "LocalDefense",
+    ["世界防务"] = "WorldDefense",
+    ["寻求组队"] = "LookingForGroup",
+    ["公会招募"] = "GuildRecruitment",
+    ["硬核"] = "Hardcore",
+}
 
 local function HasChinese(s)
     -- UTF-8 lead bytes 0xE3-0xE9 cover CJK punctuation and the CJK ideograph blocks.
@@ -21,14 +38,10 @@ function WT.OnNameTranslated(raw, english)
     pending[raw] = nil
 end
 
-local function DisplayName(raw)
+-- English for a Chinese name, or nil (then asks the proxy, so a later line has it).
+local function Lookup(raw)
     local english = WoWTranslateDB.names[raw]
-    if english then
-        if WoWTranslateDB.showOriginal then
-            return english .. " (" .. raw .. ")"
-        end
-        return english
-    end
+    if english then return english end
     if WT.proxyVersion and not pending[raw] then
         pending[raw] = true
         WT.Send("?NAME|" .. raw)
@@ -36,6 +49,35 @@ local function DisplayName(raw)
         C_Timer.After(30, function() pending[raw] = nil end)
     end
     return nil
+end
+
+local function SenderDisplay(raw)
+    local english = Lookup(raw)
+    if not english then return nil end
+    if WoWTranslateDB.nameStyle == "both" then
+        return raw .. " | " .. english
+    end
+    return english
+end
+
+-- Replaces each run of non-ASCII text ("世界", "暴风城") with its English name.
+local function TranslateChannelText(text)
+    if type(text) ~= "string" or not HasChinese(text) then return text end
+    return (text:gsub("[\128-\255]+", function(run)
+        if not HasChinese(run) then return run end
+        return CHANNELS[run] or Lookup(run) or run
+    end))
+end
+
+local function ChannelFilter(_, _, ...)
+    local db = WoWTranslateDB
+    if not (db.enabled and db.translateChannels) then return false end
+    local args = { ... }
+    local channelString, channelName = args[4], args[9]
+    if not (HasChinese(channelString) or HasChinese(channelName)) then return false end
+    args[4] = TranslateChannelText(channelString)
+    args[9] = TranslateChannelText(channelName)
+    return false, unpack(args, 1, select("#", ...))
 end
 
 WT.AddLoadedHook(function()
@@ -50,11 +92,16 @@ WT.AddLoadedHook(function()
         if not HasChinese(raw) then
             return colored
         end
-        local shown = DisplayName(raw)
+        local shown = SenderDisplay(raw)
         if not shown then
             return colored
         end
         local replaced, count = colored:gsub(EscapePattern(raw), (shown:gsub("%%", "%%%%")), 1)
         return count > 0 and replaced or colored
+    end
+
+    for _, event in ipairs({ "CHAT_MSG_CHANNEL", "CHAT_MSG_CHANNEL_JOIN", "CHAT_MSG_CHANNEL_LEAVE",
+                             "CHAT_MSG_CHANNEL_NOTICE", "CHAT_MSG_CHANNEL_NOTICE_USER" }) do
+        ChatFrame_AddMessageEventFilter(event, ChannelFilter)
     end
 end)

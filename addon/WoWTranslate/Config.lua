@@ -132,11 +132,25 @@ local function Create()
     y = y - 26
     AddCheck(frame, "Translate sender names in chat", 16, y,
         function() return db().translateNames end, function(v) WT.Set("translateNames", v) end,
-        "Shows Chinese player names in English. Clicking the name still uses the real name.")
+        "Shows Chinese player names in English. Clicking the name still uses the real name.\n/wt names on | off")
     y = y - 26
-    AddCheck(frame, "Also show the original text", 16, y,
-        function() return db().showOriginal end, function(v) WT.Set("showOriginal", v) end,
-        "Adds the original Chinese in brackets after the English (and your English after what you sent).")
+    AddCheck(frame, "Keep the original name (Original | Translated)", 40, y,
+        function() return db().nameStyle == "both" end,
+        function(v) WT.Set("nameStyle", v and "both" or "english") end,
+        "Off: [Son Of The Wind]: message\nOn: [风之子 | Son Of The Wind]: message\n" ..
+        "Lines with Chinese in them use the client's bigger Chinese font.\n/wt names both | english")
+    y = y - 26
+    AddCheck(frame, "Translate channel names (世界 -> World)", 16, y,
+        function() return db().translateChannels end, function(v) WT.Set("translateChannels", v) end,
+        "Display only. /wt channels on | off")
+    y = y - 26
+    AddCheck(frame, "Show the original text on incoming messages", 16, y,
+        function() return db().showOriginalIn end, function(v) WT.Set("showOriginalIn", v) end,
+        "English (中文)\n/wt orig in toggle")
+    y = y - 26
+    AddCheck(frame, "Show what was sent on my own messages", 16, y,
+        function() return db().showOriginalOut end, function(v) WT.Set("showOriginalOut", v) end,
+        "What you typed (the Chinese that was sent)\n/wt orig out toggle")
     y = y - 26
     AddCheck(frame, "Show the OUT button", 16, y,
         function() return db().showOutButton end, function(v) WT.Set("showOutButton", v) end,

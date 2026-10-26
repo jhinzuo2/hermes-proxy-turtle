@@ -49,7 +49,8 @@ namespace HermesProxy.Translation
         bool _on = true;
         bool _incoming = true;
         bool _outgoing = false;
-        bool _showOriginal = false;
+        bool _showOriginalIn = false;   // incoming: "English (中文)"
+        bool _showOriginalOut = false;  // your echo: "what you typed (what was sent)"
         HashSet<ChatMessageTypeModern> _inTypes = ExpandTypes("sywprgobc");
         HashSet<ChatMessageTypeModern> _outTypes = ExpandTypes("sywprgobc");
         HashSet<string> _inChannelsOff = new(StringComparer.OrdinalIgnoreCase);
@@ -109,7 +110,8 @@ namespace HermesProxy.Translation
         // packets go out through SendToClient from whichever thread finishes them.
         public void QueueIncoming(ChatPkt chat, ChatMessageTypeModern type, bool fromSelf, Action<ChatPkt> sendNow)
         {
-            string original = chat.ChatText ?? "";
+            // The legacy server's text length includes the terminating NUL.
+            string original = (chat.ChatText ?? "").TrimEnd('\0');
             Task<string> work = null;
             // A whisper inform carries the recipient as sender, but the text is ours.
             bool ownMessage = fromSelf || type == ChatMessageTypeModern.WhisperInform;
@@ -119,7 +121,7 @@ namespace HermesProxy.Translation
                 // Our own message coming back: show what you typed, not a back-translation.
                 bool showOriginal;
                 lock (_lock)
-                    showOriginal = _showOriginal;
+                    showOriginal = _showOriginalOut;
                 work = Task.FromResult(showOriginal ? typed + " (" + original + ")" : typed);
             }
             else if (!ownMessage && WantsIncoming(type, chat.Channel) && TranslationText.ContainsChinese(original))
@@ -148,7 +150,7 @@ namespace HermesProxy.Translation
                 return null;
             bool showOriginal;
             lock (_lock)
-                showOriginal = _showOriginal;
+                showOriginal = _showOriginalIn;
             return showOriginal ? translated + " (" + original + ")" : translated;
         }
 
@@ -171,7 +173,9 @@ namespace HermesProxy.Translation
         public void QueueOutgoing(ChatMessageTypeModern type, string channelName, string text, Action<string> send)
         {
             Task<string> work = null;
-            if (WantsOutgoing(type, channelName) && TranslationText.LooksEnglish(text))
+            // ".xp" and other server commands go out exactly as typed.
+            bool isCommand = text.TrimStart().StartsWith(".", StringComparison.Ordinal);
+            if (!isCommand && WantsOutgoing(type, channelName) && TranslationText.LooksEnglish(text))
                 work = TranslationService.TranslateMessageAsync(text, TranslationDirection.EnglishToChinese);
 
             if (work == null && _toServer.IsEmpty)
@@ -269,7 +273,8 @@ namespace HermesProxy.Translation
         }
 
         // k=v pairs separated by ';':
-        //   on, in, out, orig = 0/1; it, ot = chat type codes (see TypeGroups);
+        //   on, in, out = 0/1; oi, oo = also show the original text, incoming / on your own echo;
+        //   it, ot = chat type codes (see TypeGroups);
         //   xi, xo = comma-separated channel names to skip (incoming / outgoing).
         void ApplyConfig(string config)
         {
@@ -287,14 +292,16 @@ namespace HermesProxy.Translation
                         case "on": _on = value == "1"; break;
                         case "in": _incoming = value == "1"; break;
                         case "out": _outgoing = value == "1"; break;
-                        case "orig": _showOriginal = value == "1"; break;
+                        case "orig": _showOriginalIn = _showOriginalOut = value == "1"; break; // addon v2.0.0
+                        case "oi": _showOriginalIn = value == "1"; break;
+                        case "oo": _showOriginalOut = value == "1"; break;
                         case "it": _inTypes = ExpandTypes(value); break;
                         case "ot": _outTypes = ExpandTypes(value); break;
                         case "xi": _inChannelsOff = ParseChannelList(value); break;
                         case "xo": _outChannelsOff = ParseChannelList(value); break;
                     }
                 }
-                Log.Print(LogType.Debug, $"[Translate] Addon config: on={_on} in={_incoming} out={_outgoing} orig={_showOriginal}");
+                Log.Print(LogType.Debug, $"[Translate] Addon config: on={_on} in={_incoming} out={_outgoing} origIn={_showOriginalIn} origOut={_showOriginalOut}");
             }
         }
 

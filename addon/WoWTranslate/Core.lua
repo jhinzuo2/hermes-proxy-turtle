@@ -29,7 +29,10 @@ local DEFAULTS = {
     incoming = true,
     outgoing = false,
     translateNames = true,
-    showOriginal = false,
+    nameStyle = "english",  -- "english" = Translated, "both" = Original | Translated
+    translateChannels = true,
+    showOriginalIn = false,  -- incoming: "English (中文)"
+    showOriginalOut = false, -- your own messages: "what you typed (what was sent)"
     showOutButton = true,
     inTypes = { s = true, y = true, w = true, p = true, r = true, g = true, o = true, b = true, e = false, c = true },
     outTypes = { s = true, y = true, w = true, p = true, r = true, g = true, o = true, b = true, e = false, c = true },
@@ -94,7 +97,8 @@ function WT.PushConfig()
     local cfg = "?CFG|on=" .. Bool(db.enabled) ..
         ";in=" .. Bool(db.incoming) ..
         ";out=" .. Bool(db.outgoing) ..
-        ";orig=" .. Bool(db.showOriginal) ..
+        ";oi=" .. Bool(db.showOriginalIn) ..
+        ";oo=" .. Bool(db.showOriginalOut) ..
         ";it=" .. CodesFrom(db.inTypes) ..
         ";ot=" .. CodesFrom(db.outTypes) ..
         ";xi=" .. NamesFrom(db.inChannelsOff) ..
@@ -208,8 +212,9 @@ local function Help()
     WT.Print("  /wt on | off | toggle - all translation")
     WT.Print("  /wt out on | off | toggle - outgoing EN->CN")
     WT.Print("  /wt in on | off | toggle - incoming CN->EN")
-    WT.Print("  /wt names on | off - translate sender names")
-    WT.Print("  /wt orig on | off - also show the original text")
+    WT.Print("  /wt names on | off | both | english - sender names")
+    WT.Print("  /wt channels on | off - channel names (世界 -> World)")
+    WT.Print("  /wt orig in | out on | off | toggle - also show the original text")
     WT.Print("  /wt button on | off - the OUT button on screen")
     WT.Print("  /wt status | clearcache | reconnect")
 end
@@ -238,15 +243,29 @@ SlashCmdList.WOWTRANSLATE = function(input)
         if v == nil then return Help() end
         WT.SetIncoming(v)
     elseif cmd == "names" then
+        if arg == "both" or arg == "english" then
+            WT.Set("nameStyle", arg)
+            WT.Set("translateNames", true)
+            WT.Print("sender names: " .. (arg == "both" and "Original | Translated" or "Translated"))
+            return
+        end
         local v = ParseSwitch(arg, db.translateNames)
         if v == nil then return Help() end
         WT.Set("translateNames", v)
         WT.Print("sender names " .. (v and "translated" or "as is"))
-    elseif cmd == "orig" or cmd == "original" then
-        local v = ParseSwitch(arg, db.showOriginal)
+    elseif cmd == "channels" then
+        local v = ParseSwitch(arg, db.translateChannels)
         if v == nil then return Help() end
-        WT.Set("showOriginal", v)
-        WT.Print("original text " .. (v and "shown" or "hidden"))
+        WT.Set("translateChannels", v)
+        WT.Print("channel names " .. (v and "translated" or "as is"))
+    elseif cmd == "orig" or cmd == "original" then
+        local which, sw = strsplit(" ", arg, 2)
+        local key = (which == "in" and "showOriginalIn") or (which == "out" and "showOriginalOut") or nil
+        if not key then return Help() end
+        local v = ParseSwitch(sw and strtrim(sw) or "", db[key])
+        if v == nil then return Help() end
+        WT.Set(key, v)
+        WT.Print("original text on " .. (which == "in" and "incoming" or "your own") .. " messages " .. (v and "shown" or "hidden"))
     elseif cmd == "button" then
         local v = ParseSwitch(arg, db.showOutButton)
         if v == nil then return Help() end
@@ -276,7 +295,11 @@ events:SetScript("OnEvent", function(_, event, ...)
     if event == "ADDON_LOADED" then
         if ... ~= ADDON then return end
         WoWTranslateDB = WoWTranslateDB or {}
-        CopyDefaults(DEFAULTS, WoWTranslateDB)
+        local db = WoWTranslateDB
+        if db.showOriginal ~= nil then -- v2.0.0 had one switch for both
+            db.showOriginalIn, db.showOriginalOut, db.showOriginal = db.showOriginal, db.showOriginal, nil
+        end
+        CopyDefaults(DEFAULTS, db)
         C_ChatInfo.RegisterAddonMessagePrefix(WT.PREFIX)
         if WT.OnLoaded then WT.OnLoaded() end
     elseif event == "PLAYER_ENTERING_WORLD" then
