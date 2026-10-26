@@ -195,8 +195,8 @@ local function BuildLeft()
     y = AddOption(x + 18, y, "Also in player tooltips",
         "Mouse over a player: name, guild and guild rank in English. /wt tooltip",
         function() return db().translateTooltips end, function(v) WT.Set("translateTooltips", v) end)
-    y = AddOption(x + 18, y, "Also in the friends list and guild window",
-        "Friend and guild member names (and guild ranks) in English. Display only: whisper, invite and the " ..
+    y = AddOption(x + 18, y, "Also in the friends, who and guild lists",
+        "Names in the friends, who, ignore and guild lists (and guild ranks) in English. Display only: whisper, invite and the " ..
         "right-click menu still use the real name. /wt social",
         function() return db().translateSocial end, function(v) WT.SetTranslateSocial(v) end)
     y = AddOption(x, y, "Translate channel names",

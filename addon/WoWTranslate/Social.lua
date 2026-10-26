@@ -1,8 +1,15 @@
--- Friends list and guild window: Chinese player names (and guild ranks) shown in English.
--- Display only: whisper, invite and the right-click menus keep using the real names. Lists are
--- narrow, so they always show just the English, whatever the chat name style is.
+-- Social window (friends, who, ignore, guild): Chinese player names and guild ranks shown in
+-- English. Display only: whisper, invite and the right-click menus keep using the real names.
+-- Lists are narrow, so they always show just the English, whatever the chat name style is.
+--
+-- The 1.14 lists redraw their rows in several ways (hooks, scroll frames calling stored
+-- functions), so instead of chasing each one: while the window is open, its visible text is
+-- checked a few times a second. Only rows that still contain Chinese cost anything.
 
 local _, WT = ...
+
+local SCAN_INTERVAL = 0.5
+local MAX_DEPTH = 8
 
 local function Enabled()
     local db = WoWTranslateDB
@@ -11,7 +18,6 @@ end
 
 -- Swaps every Chinese run in a font string for its English name, when that is known.
 local function TranslateFontString(fs)
-    if not fs or not fs.GetText then return end
     local text = fs:GetText()
     if type(text) ~= "string" or not WT.HasChinese(text) then return end
     local changed = false
@@ -24,63 +30,52 @@ local function TranslateFontString(fs)
     if changed then fs:SetText(newText) end
 end
 
-local function UpdateFriendButton(button)
-    if not Enabled() or not button then return end
-    TranslateFontString(button.name)
-end
-
-local function UpdateFriendsList()
-    if not Enabled() then return end
-    local scroll = FriendsListFrameScrollFrame
-    if scroll and scroll.buttons then
-        for _, button in ipairs(scroll.buttons) do
-            if button:IsShown() then TranslateFontString(button.name) end
+local function Scan(frame, depth)
+    if depth > MAX_DEPTH or not frame:IsVisible() then return end
+    for _, region in ipairs({ frame:GetRegions() }) do
+        if region:GetObjectType() == "FontString" and region:IsVisible() then
+            TranslateFontString(region)
         end
     end
-end
-
-local function UpdateGuildList()
-    if not Enabled() then return end
-    for i = 1, (GUILDMEMBERS_TO_DISPLAY or 13) do
-        TranslateFontString(_G["GuildFrameButton" .. i .. "Name"])
-        TranslateFontString(_G["GuildFrameGuildStatusButton" .. i .. "Name"])
-        TranslateFontString(_G["GuildFrameGuildStatusButton" .. i .. "Rank"])
+    for _, child in ipairs({ frame:GetChildren() }) do
+        Scan(child, depth + 1)
     end
-    TranslateFontString(_G.GuildMemberDetailName)
-    TranslateFontString(_G.GuildMemberDetailRank)
 end
 
--- Several names usually arrive at once: redraw the open list once, a moment later.
-local refreshQueued = false
-local function QueueRefresh()
-    if refreshQueued then return end
-    refreshQueued = true
-    C_Timer.After(0.3, function()
-        refreshQueued = false
-        if not Enabled() or not (FriendsFrame and FriendsFrame:IsShown()) then return end
-        if FriendsList_Update and FriendsListFrame and FriendsListFrame:IsShown() then FriendsList_Update() end
-        if GuildStatus_Update and GuildFrame and GuildFrame:IsShown() then GuildStatus_Update() end
-    end)
+function WT.ScanSocial()
+    if Enabled() and FriendsFrame and FriendsFrame:IsVisible() then
+        Scan(FriendsFrame, 1)
+    end
 end
+
+local ticker
 
 WT.AddLoadedHook(function()
-    if FriendsFrame_UpdateFriendButton then
-        hooksecurefunc("FriendsFrame_UpdateFriendButton", UpdateFriendButton)
-    elseif FriendsList_Update then
-        hooksecurefunc("FriendsList_Update", UpdateFriendsList)
-    end
-    if GuildStatus_Update then
-        hooksecurefunc("GuildStatus_Update", UpdateGuildList)
+    if not FriendsFrame then return end
+    FriendsFrame:HookScript("OnShow", function()
+        WT.ScanSocial()
+        if not ticker then ticker = C_Timer.NewTicker(SCAN_INTERVAL, WT.ScanSocial) end
+    end)
+    FriendsFrame:HookScript("OnHide", function()
+        if ticker then ticker:Cancel(); ticker = nil end
+    end)
+    -- Redraw right away after the lists update, instead of waiting for the next tick.
+    for _, name in ipairs({ "FriendsList_Update", "WhoList_Update", "IgnoreList_Update", "GuildStatus_Update" }) do
+        if type(_G[name]) == "function" then hooksecurefunc(name, WT.ScanSocial) end
     end
     if GuildMemberDetailFrame then
-        GuildMemberDetailFrame:HookScript("OnShow", UpdateGuildList)
+        GuildMemberDetailFrame:HookScript("OnShow", function() Scan(GuildMemberDetailFrame, 1) end)
     end
-    WT.AddNameListener(QueueRefresh)
 end)
 
--- Switching the option on or off redraws the open lists (off = the real names come back).
+-- Switching the option off redraws the open lists so the real names come back.
 function WT.SetTranslateSocial(on)
     WT.Set("translateSocial", on)
+    if on then
+        WT.ScanSocial()
+        return
+    end
     if FriendsList_Update and FriendsListFrame and FriendsListFrame:IsShown() then FriendsList_Update() end
+    if WhoList_Update and WhoFrame and WhoFrame:IsShown() then WhoList_Update() end
     if GuildStatus_Update and GuildFrame and GuildFrame:IsShown() then GuildStatus_Update() end
 end
