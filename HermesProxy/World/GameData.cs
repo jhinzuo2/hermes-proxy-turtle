@@ -1658,8 +1658,10 @@ namespace HermesProxy.World
                 {
                     float dist = 0.0f;
                     TaxiPath taxiPath = TaxiPaths[i];
-                    TaxiNode nodeFrom = TaxiNodes[TaxiPaths[i].From];
-                    TaxiNode nodeTo = TaxiNodes[TaxiPaths[i].To];
+                    // Server DBCs (e.g. Turtle's) have placeholder paths like 0 -> 0: skip unknown nodes.
+                    if (!TaxiNodes.TryGetValue(TaxiPaths[i].From, out TaxiNode nodeFrom) ||
+                        !TaxiNodes.TryGetValue(TaxiPaths[i].To, out TaxiNode nodeTo))
+                        continue;
 
                     if (nodeFrom.x == 0 && nodeFrom.x == 0 && nodeFrom.z == 0)
                         continue;

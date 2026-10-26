@@ -1,4 +1,5 @@
 ﻿using Framework.Constants;
+using Framework.Logging;
 using HermesProxy.Enums;
 using HermesProxy.World;
 using HermesProxy.World.Enums;
@@ -45,7 +46,11 @@ namespace HermesProxy.World.Server
             {
                 HashSet<uint> path = GetTaxiPath(GetSession().GameState.CurrentTaxiNode, taxi.Node, GetSession().GameState.UsableTaxiNodes);
                 if (path.Count <= 1) // no nodes found
+                {
+                    // Route unknown to CSV\TaxiPath*.csv (e.g. a custom server node): the click would do nothing.
+                    Log.Print(LogType.Warn, $"No taxi route from node {GetSession().GameState.CurrentTaxiNode} to {taxi.Node} in the TaxiPath CSVs.");
                     return;
+                }
 
                 WorldPacket packet = new WorldPacket(Opcode.CMSG_ACTIVATE_TAXI_EXPRESS);
                 packet.WriteGuid(taxi.FlightMaster.To64());
