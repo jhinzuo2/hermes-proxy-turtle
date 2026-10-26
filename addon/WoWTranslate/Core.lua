@@ -31,6 +31,7 @@ local DEFAULTS = {
     translateNames = true,
     nameStyle = "english",  -- "english" = Translated, "both" = Original | Translated
     translateChannels = true,
+    unifyChatFont = true,    -- same font/size for Chinese and English in chat (ChatFont.lua)
     showOriginalIn = false,  -- incoming: "English (中文)"
     showOriginalOut = false, -- your own messages: "what you typed (what was sent)"
     showOutButton = true,
@@ -216,6 +217,7 @@ local function Help()
     WT.Print("  /wt channels on | off - channel names (世界 -> World)")
     WT.Print("  /wt orig in | out on | off | toggle - also show the original text")
     WT.Print("  /wt button on | off - the OUT button on screen")
+    WT.Print("  /wt font on | off - same font and size for Chinese and English in chat")
     WT.Print("  /wt status | clearcache | reconnect")
 end
 
@@ -270,6 +272,11 @@ SlashCmdList.WOWTRANSLATE = function(input)
         local v = ParseSwitch(arg, db.showOutButton)
         if v == nil then return Help() end
         WT.Set("showOutButton", v)
+    elseif cmd == "font" then
+        local v = ParseSwitch(arg, db.unifyChatFont)
+        if v == nil then return Help() end
+        WT.SetUnifyChatFont(v)
+        WT.Print("chat font " .. (v and "unified (WarSans)" or "back to the client's own"))
     elseif cmd == "status" then
         WT.Print(WT.StatusText())
         if WT.proxyVersion then WT.Send("?STATUS") end

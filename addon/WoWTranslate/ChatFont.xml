@@ -1,0 +1,680 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+  <!-- Chat fonts where every alphabet uses the same font file and size (Nowar WarSans, OFL).
+       The client otherwise draws any line with a Chinese character in its bigger CJK font.
+       Generated: one family per chat font size, WoWTranslateChatFont8 .. WoWTranslateChatFont32. -->
+  <FontFamily name="WoWTranslateChatFont8" virtual="true">
+    <Member alphabet="roman">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="8">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="korean">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="8">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="simplifiedchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="8">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="traditionalchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="8">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="russian">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="8">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+  </FontFamily>
+  <FontFamily name="WoWTranslateChatFont9" virtual="true">
+    <Member alphabet="roman">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="9">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="korean">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="9">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="simplifiedchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="9">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="traditionalchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="9">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="russian">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="9">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+  </FontFamily>
+  <FontFamily name="WoWTranslateChatFont10" virtual="true">
+    <Member alphabet="roman">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="10">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="korean">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="10">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="simplifiedchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="10">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="traditionalchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="10">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="russian">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="10">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+  </FontFamily>
+  <FontFamily name="WoWTranslateChatFont11" virtual="true">
+    <Member alphabet="roman">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="11">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="korean">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="11">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="simplifiedchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="11">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="traditionalchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="11">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="russian">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="11">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+  </FontFamily>
+  <FontFamily name="WoWTranslateChatFont12" virtual="true">
+    <Member alphabet="roman">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="12">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="korean">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="12">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="simplifiedchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="12">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="traditionalchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="12">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="russian">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="12">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+  </FontFamily>
+  <FontFamily name="WoWTranslateChatFont13" virtual="true">
+    <Member alphabet="roman">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="13">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="korean">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="13">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="simplifiedchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="13">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="traditionalchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="13">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="russian">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="13">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+  </FontFamily>
+  <FontFamily name="WoWTranslateChatFont14" virtual="true">
+    <Member alphabet="roman">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="14">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="korean">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="14">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="simplifiedchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="14">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="traditionalchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="14">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="russian">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="14">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+  </FontFamily>
+  <FontFamily name="WoWTranslateChatFont15" virtual="true">
+    <Member alphabet="roman">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="15">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="korean">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="15">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="simplifiedchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="15">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="traditionalchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="15">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="russian">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="15">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+  </FontFamily>
+  <FontFamily name="WoWTranslateChatFont16" virtual="true">
+    <Member alphabet="roman">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="16">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="korean">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="16">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="simplifiedchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="16">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="traditionalchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="16">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="russian">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="16">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+  </FontFamily>
+  <FontFamily name="WoWTranslateChatFont17" virtual="true">
+    <Member alphabet="roman">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="17">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="korean">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="17">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="simplifiedchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="17">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="traditionalchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="17">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="russian">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="17">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+  </FontFamily>
+  <FontFamily name="WoWTranslateChatFont18" virtual="true">
+    <Member alphabet="roman">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="18">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="korean">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="18">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="simplifiedchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="18">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="traditionalchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="18">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="russian">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="18">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+  </FontFamily>
+  <FontFamily name="WoWTranslateChatFont19" virtual="true">
+    <Member alphabet="roman">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="19">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="korean">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="19">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="simplifiedchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="19">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="traditionalchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="19">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="russian">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="19">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+  </FontFamily>
+  <FontFamily name="WoWTranslateChatFont20" virtual="true">
+    <Member alphabet="roman">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="20">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="korean">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="20">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="simplifiedchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="20">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="traditionalchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="20">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="russian">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="20">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+  </FontFamily>
+  <FontFamily name="WoWTranslateChatFont21" virtual="true">
+    <Member alphabet="roman">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="21">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="korean">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="21">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="simplifiedchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="21">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="traditionalchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="21">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="russian">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="21">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+  </FontFamily>
+  <FontFamily name="WoWTranslateChatFont22" virtual="true">
+    <Member alphabet="roman">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="22">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="korean">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="22">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="simplifiedchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="22">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="traditionalchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="22">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="russian">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="22">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+  </FontFamily>
+  <FontFamily name="WoWTranslateChatFont23" virtual="true">
+    <Member alphabet="roman">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="23">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="korean">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="23">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="simplifiedchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="23">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="traditionalchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="23">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="russian">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="23">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+  </FontFamily>
+  <FontFamily name="WoWTranslateChatFont24" virtual="true">
+    <Member alphabet="roman">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="24">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="korean">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="24">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="simplifiedchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="24">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="traditionalchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="24">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="russian">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="24">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+  </FontFamily>
+  <FontFamily name="WoWTranslateChatFont25" virtual="true">
+    <Member alphabet="roman">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="25">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="korean">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="25">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="simplifiedchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="25">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="traditionalchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="25">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="russian">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="25">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+  </FontFamily>
+  <FontFamily name="WoWTranslateChatFont26" virtual="true">
+    <Member alphabet="roman">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="26">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="korean">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="26">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="simplifiedchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="26">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="traditionalchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="26">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="russian">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="26">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+  </FontFamily>
+  <FontFamily name="WoWTranslateChatFont27" virtual="true">
+    <Member alphabet="roman">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="27">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="korean">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="27">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="simplifiedchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="27">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="traditionalchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="27">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="russian">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="27">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+  </FontFamily>
+  <FontFamily name="WoWTranslateChatFont28" virtual="true">
+    <Member alphabet="roman">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="28">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="korean">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="28">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="simplifiedchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="28">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="traditionalchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="28">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="russian">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="28">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+  </FontFamily>
+  <FontFamily name="WoWTranslateChatFont29" virtual="true">
+    <Member alphabet="roman">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="29">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="korean">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="29">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="simplifiedchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="29">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="traditionalchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="29">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="russian">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="29">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+  </FontFamily>
+  <FontFamily name="WoWTranslateChatFont30" virtual="true">
+    <Member alphabet="roman">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="30">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="korean">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="30">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="simplifiedchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="30">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="traditionalchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="30">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="russian">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="30">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+  </FontFamily>
+  <FontFamily name="WoWTranslateChatFont31" virtual="true">
+    <Member alphabet="roman">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="31">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="korean">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="31">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="simplifiedchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="31">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="traditionalchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="31">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="russian">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="31">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+  </FontFamily>
+  <FontFamily name="WoWTranslateChatFont32" virtual="true">
+    <Member alphabet="roman">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="32">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="korean">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="32">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="simplifiedchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="32">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="traditionalchinese">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="32">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+    <Member alphabet="russian">
+      <Font font="Interface\AddOns\WoWTranslate\Fonts\WarSansTT-Bliz-500.ttf" height="32">
+        <Shadow><Offset><AbsDimension x="1" y="-1"/></Offset><Color r="0" g="0" b="0"/></Shadow>
+      </Font>
+    </Member>
+  </FontFamily>
+</Ui>

@@ -144,6 +144,11 @@ local function Create()
         function() return db().translateChannels end, function(v) WT.Set("translateChannels", v) end,
         "Display only. /wt channels on | off")
     y = y - 26
+    AddCheck(frame, "Same font and size for Chinese and English in chat", 16, y,
+        function() return db().unifyChatFont end, function(v) WT.SetUnifyChatFont(v) end,
+        "Uses the Nowar WarSans font (Latin + Chinese) at your chat font size, so lines with Chinese in them " ..
+        "are no longer bigger. /wt font on | off")
+    y = y - 26
     AddCheck(frame, "Show the original text on incoming messages", 16, y,
         function() return db().showOriginalIn end, function(v) WT.Set("showOriginalIn", v) end,
         "English (中文)\n/wt orig in toggle")

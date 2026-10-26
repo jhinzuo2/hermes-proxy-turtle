@@ -1,7 +1,7 @@
 ## Interface: 11402
 ## Title: WoWTranslate
 ## Notes: Chinese <-> English chat translation through the Capycraft HermesProxy
-## Version: 2.1.0
+## Version: 2.2.0
 ## Author: WoWTranslateTeam
 ## SavedVariables: WoWTranslateDB
 
@@ -10,3 +10,5 @@ Names.lua
 OutButton.lua
 Minimap.lua
 Config.lua
+ChatFont.xml
+ChatFont.lua
