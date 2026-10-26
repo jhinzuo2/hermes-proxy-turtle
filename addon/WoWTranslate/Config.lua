@@ -197,7 +197,7 @@ local function BuildLeft()
         function() return db().translateTooltips end, function(v) WT.Set("translateTooltips", v) end)
     y = AddOption(x + 18, y, "Also in the friends, who and guild lists",
         "Names in the friends, who, ignore and guild lists (and guild ranks) in English. Display only: whisper, invite and the " ..
-        "right-click menu still use the real name. /wt social",
+        "right-click menu still use the real name; the menu title shows the English. /wt social",
         function() return db().translateSocial end, function(v) WT.SetTranslateSocial(v) end)
     y = AddOption(x, y, "Translate channel names",
         "[5. 世界] is shown as [5. World]. Display only: /5 still talks in the same channel. /wt channels",
