@@ -107,7 +107,15 @@ namespace HermesProxy.World.Server
         [PacketHandler(Opcode.CMSG_CHAT_MESSAGE_CHANNEL)]
         void HandleChatMessageChannel(ChatMessageChannel channel)
         {
-            var toBeSentTextParts = ConvertTextMessageIntoMaxLengthParts(channel.Text);
+            if (Translation.TranslationService.IsEnabled)
+                GetSession().ChatTranslation.QueueOutgoing(ChatMessageTypeModern.Channel, channel.Target, channel.Text, text => SendChatMessageChannel(channel, text));
+            else
+                SendChatMessageChannel(channel, channel.Text);
+        }
+
+        void SendChatMessageChannel(ChatMessageChannel channel, string message)
+        {
+            var toBeSentTextParts = ConvertTextMessageIntoMaxLengthParts(message);
             foreach (string text in toBeSentTextParts)
             {
                 if (LegacyVersion.AddedInVersion(ClientVersionBuild.V2_0_1_6180))
@@ -120,7 +128,15 @@ namespace HermesProxy.World.Server
         [PacketHandler(Opcode.CMSG_CHAT_MESSAGE_WHISPER)]
         void HandleChatMessageWhisper(ChatMessageWhisper whisper)
         {
-            var toBeSentTextParts = ConvertTextMessageIntoMaxLengthParts(whisper.Text);
+            if (Translation.TranslationService.IsEnabled)
+                GetSession().ChatTranslation.QueueOutgoing(ChatMessageTypeModern.Whisper, "", whisper.Text, text => SendChatMessageWhisper(whisper, text));
+            else
+                SendChatMessageWhisper(whisper, whisper.Text);
+        }
+
+        void SendChatMessageWhisper(ChatMessageWhisper whisper, string message)
+        {
+            var toBeSentTextParts = ConvertTextMessageIntoMaxLengthParts(message);
             foreach (string text in toBeSentTextParts)
             {
                 if (LegacyVersion.AddedInVersion(ClientVersionBuild.V2_0_1_6180))
@@ -189,18 +205,26 @@ namespace HermesProxy.World.Server
                     return;
             }
 
-            var toBeSentTextParts = ConvertTextMessageIntoMaxLengthParts(packet.Text);
+            if (Translation.TranslationService.IsEnabled)
+                GetSession().ChatTranslation.QueueOutgoing(type, "", packet.Text, text => SendChatMessage(type, packet.Language, text));
+            else
+                SendChatMessage(type, packet.Language, packet.Text);
+        }
+
+        void SendChatMessage(ChatMessageTypeModern type, uint language, string message)
+        {
+            var toBeSentTextParts = ConvertTextMessageIntoMaxLengthParts(message);
             foreach (string text in toBeSentTextParts)
             {
                 if (LegacyVersion.AddedInVersion(ClientVersionBuild.V2_0_1_6180))
                 {
                     ChatMessageTypeWotLK chatMsg = (ChatMessageTypeWotLK)Enum.Parse(typeof(ChatMessageTypeWotLK), type.ToString());
-                    GetSession().WorldClient.SendMessageChatWotLK(chatMsg, packet.Language, text, "", "");
+                    GetSession().WorldClient.SendMessageChatWotLK(chatMsg, language, text, "", "");
                 }
                 else
                 {
                     ChatMessageTypeVanilla chatMsg = (ChatMessageTypeVanilla)Enum.Parse(typeof(ChatMessageTypeVanilla), type.ToString());
-                    GetSession().WorldClient.SendMessageChatVanilla(chatMsg, packet.Language, text, "", "");
+                    GetSession().WorldClient.SendMessageChatVanilla(chatMsg, language, text, "", "");
                 }
             }
         }
@@ -208,6 +232,10 @@ namespace HermesProxy.World.Server
         [PacketHandler(Opcode.CMSG_CHAT_ADDON_MESSAGE)]
         void HandleAddonMessage(ChatAddonMessage packet)
         {
+            // WoWTranslate addon talking to the proxy: answered here, never sent to the server.
+            if (Translation.TranslationService.IsEnabled && GetSession().ChatTranslation.HandleAddonMessage(packet.Params.Prefix, packet.Params.Text))
+                return;
+
             uint language = (uint)Language.Addon;
             string text = packet.Params.Prefix + '\t' + packet.Params.Text;
 
@@ -226,6 +254,9 @@ namespace HermesProxy.World.Server
         [PacketHandler(Opcode.CMSG_CHAT_ADDON_MESSAGE_TARGETED)]
         void HandleAddonMessageTargeted(ChatAddonMessageTargeted packet)
         {
+            if (Translation.TranslationService.IsEnabled && GetSession().ChatTranslation.HandleAddonMessage(packet.Params.Prefix, packet.Params.Text))
+                return;
+
             uint language = (uint)Language.Addon;
             string text = packet.Params.Prefix + '\t' + packet.Params.Text;
             string channelName = packet.ChannelGuid.IsEmpty() ? "" :

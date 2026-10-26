@@ -65,6 +65,8 @@ namespace HermesProxy
             Log.DebugLogEnabled = Settings.DebugOutput;
             Log.Print(LogType.Debug, "Debug logging enabled");
 
+            HermesProxy.Translation.TranslationService.Initialize();
+
             if (!AesGcm.IsSupported)
             {
                 Log.Print(LogType.Error, "AesGcm is not supported on your platform");

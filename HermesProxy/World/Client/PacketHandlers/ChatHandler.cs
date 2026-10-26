@@ -229,6 +229,12 @@ namespace HermesProxy.World.Client
 
             ChatMessageTypeModern chatTypeModern = (ChatMessageTypeModern)Enum.Parse(typeof(ChatMessageTypeModern), chatType.ToString());
             ChatPkt chat = new ChatPkt(GetSession(), chatTypeModern, text, language, sender, senderName, receiver, "", channelName, chatFlags, addonPrefix);
+            if (Translation.TranslationService.IsEnabled && addonPrefix.Length == 0)
+            {
+                bool fromSelf = sender != null && sender == GetSession().GameState.CurrentPlayerGuid;
+                GetSession().ChatTranslation.QueueIncoming(chat, chatTypeModern, fromSelf, pkt => SendPacketToClient(pkt));
+                return;
+            }
             SendPacketToClient(chat);
         }
 

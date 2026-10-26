@@ -58,6 +58,14 @@ namespace Framework
         // Creature display the client has no model for (ERROR #132, reading 0x10) is shown as this one
         // instead (default 3167 = Stormwind City Guard). 0 = off.
         public static uint CreatureDisplayFallback;
+        // Chat translation (CN<->EN) for the WoWTranslate addon. Off unless turned on.
+        public static bool TranslationEnabled;
+        // "auto" = gtx -> tw-ob -> dict-chrome-ex -> edge-translate, or one of those to pin it.
+        public static string TranslationBackend;
+        // How long a chat line may wait for its translation before the original is used.
+        public static int TranslationTimeoutMs;
+        // Cache file (relative to the proxy's folder). Empty = memory only.
+        public static string TranslationCacheFile;
 
         public static bool LoadAndVerifyFrom(ConfigurationParser config)
         {
@@ -100,6 +108,10 @@ namespace Framework
             AirSwimAsFlight = config.GetBoolean("AirSwimAsFlight", true);
             ResolveUnknownVisibleItems = config.GetBoolean("ResolveUnknownVisibleItems", true);
             CreatureDisplayFallback = (uint)config.GetInt("CreatureDisplayFallback", 3167);
+            TranslationEnabled = config.GetBoolean("Translation.Enabled", false);
+            TranslationBackend = config.GetString("Translation.Backend", "auto");
+            TranslationTimeoutMs = config.GetInt("Translation.TimeoutMs", 4000);
+            TranslationCacheFile = config.GetString("Translation.CacheFile", "translation-cache.tsv");
 
             return VerifyConfig();
         }

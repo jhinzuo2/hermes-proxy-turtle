@@ -805,6 +805,17 @@ namespace HermesProxy
         public WorldClient WorldClient;
         public SniffFile ModernSniff;
 
+        global::HermesProxy.Translation.TranslationSession _chatTranslation;
+        public global::HermesProxy.Translation.TranslationSession ChatTranslation
+        {
+            get
+            {
+                if (_chatTranslation == null)
+                    System.Threading.Interlocked.CompareExchange(ref _chatTranslation, new global::HermesProxy.Translation.TranslationSession(this), null);
+                return _chatTranslation;
+            }
+        }
+
         public Dictionary<string, WowGuid128> GuildsByName = new();
         public Dictionary<uint, List<string>> GuildRanks = new();
 

@@ -1,0 +1,597 @@
+# English -> Chinese WoW terms (keys lowercase), exported from wow-translate WoWTranslate_OutGlossary.lua. Format: term<TAB>replacement
+Molten Core	熔火之心
+molten core	熔火之心
+Blackwing Lair	黑翼之巢
+blackwing lair	黑翼之巢
+Naxxramas	纳克萨玛斯
+naxxramas	纳克萨玛斯
+Onyxia's Lair	奥妮克希亚的巢穴
+onyxia	奥妮克希亚
+Onyxia	奥妮克希亚
+Zul'Gurub	祖尔格拉布
+zul'gurub	祖尔格拉布
+Ruins of Ahn'Qiraj	安其拉废墟
+Temple of Ahn'Qiraj	安其拉神殿
+Ahn'Qiraj	安其拉
+Azuregos	艾索雷葛斯
+Kazzak	卡扎克
+Karazhan	卡拉赞
+karazhan	卡拉赞
+Scarlet Monastery	血色修道院
+scarlet monastery	血色修道院
+Dire Maul	厄运之槌
+dire maul	厄运之槌
+Stratholme	斯坦索姆
+stratholme	斯坦索姆
+Scholomance	通灵学院
+scholomance	通灵学院
+TL	通灵学院
+Blackrock Depths	黑石深渊
+blackrock depths	黑石深渊
+Upper Blackrock Spire	黑石塔上层
+Lower Blackrock Spire	黑石塔下层
+Deadmines	死亡矿井
+deadmines	死亡矿井
+Wailing Caverns	哀嚎洞穴
+Shadowfang Keep	影牙城堡
+Gnomeregan	诺莫瑞根
+Razorfen Downs	剃刀高地
+Razorfen Kraul	剃刀沼泽
+Uldaman	奥达曼
+Zul'Farrak	祖尔法拉克
+Maraudon	玛拉顿
+Sunken Temple	沉没的神庙
+Ragefire Chasm	怒焰裂谷
+Blackfathom Deeps	黑暗深渊
+Warrior	战士
+warrior	战士
+Paladin	圣骑士
+paladin	圣骑士
+Hunter	猎人
+hunter	猎人
+Rogue	盗贼
+rogue	盗贼
+Priest	牧师
+priest	牧师
+Shaman	萨满
+shaman	萨满
+Mage	法师
+mage	法师
+Warlock	术士
+warlock	术士
+Druid	德鲁伊
+druid	德鲁伊
+tank	坦克
+Tank	坦克
+healer	奶妈
+Healer	奶妈
+Main Tank	主坦
+Off Tank	副坦
+off tank	副坦
+Resto Druid	奶德
+resto druid	奶德
+Holy Paladin	奶骑
+holy paladin	奶骑
+Resto Shaman	奶萨
+resto shaman	奶萨
+Holy Priest	奶牧
+holy priest	奶牧
+Aug Evoker	奶龙
+aug evoker	奶龙
+Augmentation Evoker	奶龙
+augmentation evoker	奶龙
+Heal me	奶我
+heal me	奶我
+Stormwind	暴风城
+stormwind	暴风城
+Orgrimmar	奥格瑞玛
+orgrimmar	奥格瑞玛
+Ironforge	铁炉堡
+ironforge	铁炉堡
+Thunder Bluff	雷霆崖
+Undercity	幽暗城
+Darnassus	达纳苏斯
+LFG	求组
+lfg	求组
+LFM	招人
+lfm	招人
+LF1M	缺一人
+lf1m	缺一人
+PST	私聊
+pst	私聊
+INV	邀请
+inv	邀请
+AFK	暂离
+afk	暂离
+BRB	马上回来
+brb	马上回来
+GG	打得好
+gg	打得好
+GN	晚安
+gn	晚安
+GL	祝好运
+gl	祝好运
+HF	玩得开心
+hf	玩得开心
+TY	谢谢
+ty	谢谢
+TY!	谢谢！
+TYVM	非常感谢
+tyvm	非常感谢
+NP	没问题
+np	没问题
+GTG	得走了
+gtg	得走了
+OMW	在路上了
+omw	在路上了
+WTS	出售
+wts	出售
+WTB	求购
+wtb	求购
+WTT	交换
+wtt	交换
+GDKP	金团
+gdkp	金团
+PUG	野团
+pug	野团
+Soft Reserve	软保留
+soft reserve	软保留
+Main Spec	主天赋
+main spec	主天赋
+Off Spec	副天赋
+off spec	副天赋
+BOE	装绑
+boe	装绑
+BOP	拾绑
+bop	拾绑
+Bind on Equip	装备后绑定
+bind on equip	装备后绑定
+Bind on Pickup	拾取后绑定
+bind on pickup	拾取后绑定
+Master Looter	队长分配
+master looter	队长分配
+Disenchant	分解
+disenchant	分解
+Progression	开荒
+progression	开荒
+Farm run	农团
+farm run	农团
+Wipe	团灭
+wipe	团灭
+Pull	拉怪
+pull	拉怪
+Summon	拉人
+summon	拉人
+Portal	传送门
+portal	传送门
+World buffs	世界BUFF
+world buffs	世界BUFF
+Bloodlust	嗜血
+bloodlust	嗜血
+Heroism	英雄气概
+heroism	英雄气概
+Battle Rez	战斗复活
+battle rez	战斗复活
+Soulstone	灵魂石
+soulstone	灵魂石
+Healthstone	治疗石
+healthstone	治疗石
+Interrupt	打断
+interrupt	打断
+Taunt	嘲讽
+taunt	嘲讽
+Dispel	驱散
+dispel	驱散
+Sheep	变羊
+sheep	变羊
+Banish	放逐
+banish	放逐
+Fear	恐惧
+fear	恐惧
+Sap	闷棍
+sap	闷棍
+Vanish	消失
+vanish	消失
+Feign Death	假死
+feign death	假死
+Mind Control	心灵控制
+mind control	心灵控制
+Shackle	束缚亡灵
+shackle	束缚亡灵
+Cyclone	吹风
+cyclone	吹风
+Hibernate	休眠
+hibernate	休眠
+Seduce	魅惑
+seduce	魅惑
+Remove Curse	解诅咒
+remove curse	解诅咒
+Spread out	分散站位
+spread out	分散站位
+Stack up	集合重合
+stack up	集合重合
+Stop DPS	停手
+stop dps	停手
+Full DPS	全力输出
+full dps	全力输出
+Watch your aggro	注意仇恨
+watch your aggro	注意仇恨
+Out of fire	别踩火
+out of fire	别踩火
+Get out of fire	别踩火
+Need heals	求奶
+need heals	求奶
+heals	奶
+Heals	奶
+heal	奶
+Heal	奶
+out of mana	没蓝
+Out of mana	没蓝
+OOM	没蓝
+oom	没蓝
+mana	蓝
+Mana	蓝
+accidental pull	引怪
+ADD	引怪
+Res me	救我
+res me	救我
+get up	起来
+Get up	起来
+ninja looter	毛人
+Ninja looter	毛人
+ninja	毛
+Ninja	毛
+SM Graveyard	XS墓地
+sm graveyard	XS墓地
+SM Library	XS图书馆
+sm library	XS图书馆
+SM Armory	XS武器库
+sm armory	XS武器库
+SM Cathedral	XS教堂
+sm cathedral	XS教堂
+Dire Maul North	厄运北
+Dire Maul West	厄运西
+Dire Maul East	厄运东
+DM	死矿
+dm	死矿
+Frostmane Hollow	霜鬃洞穴
+frostmane hollow	霜鬃洞穴
+Wind Horn Canyon	风角峡谷
+wind horn canyon	风角峡谷
+Crescent Grove	新月
+crescent grove	新月
+Gilneas City	吉尔尼斯
+Gilneas	吉尔尼斯
+gilneas	吉尔尼斯
+Dragonmaw Retreat	龙吼要塞
+dragonmaw retreat	龙吼要塞
+Stormwrought Ruins	风暴废墟
+stormwrought ruins	风暴废墟
+Hateforge Quarry	采石场
+hateforge quarry	采石场
+Emerald Sanctum	翡翠
+emerald sanctum	翡翠
+Kara lower	卡下
+Kara 10	卡下
+kara lower	卡下
+Kara upper	卡上
+Kara 40	卡上
+kara upper	卡上
+LF2M	缺两人
+lf2m	缺两人
+LF3M	缺三人
+lf3m	缺三人
+LF4M	缺四人
+lf4m	缺四人
+LF1M Tank	缺一坦克
+lf1m tank	缺一坦克
+LF1M Healer	缺一奶妈
+lf1m healer	缺一奶妈
+LF1M DPS	缺一输出
+lf1m dps	缺一输出
+Addon	插件
+Affliction Lock	痛苦术
+Affliction Warlock	痛苦术
+Alah'Thalas	阿拉萨拉斯
+Alliance	联盟
+Arcane Mage	奥法
+Armor	护甲
+Arms Warrior	武器战
+Ashbringer	灰烬使者
+Ashkandi	阿什坎迪
+Assassination Rogue	刺杀贼
+Attack Power	攻击强度
+Azshara	艾萨拉
+BIS	毕业装
+BM Hunter	兽王猎
+Baron Rivendare	瑞文戴尔男爵
+Bear Druid	熊德
+Beast Mastery Hunter	兽王猎
+Best in Slot	毕业装
+Blackrock Mountain	黑石山
+Blasted Lands	诅咒之地
+Blessing of Kings	王者祝福
+Blessing of Light	光明祝福
+Blessing of Might	力量祝福
+Blessing of Protection	保护祝福
+Blessing of Salvation	拯救祝福
+Blessing of Wisdom	智力祝福
+Boomkin	枭兽形态
+Booty Bay	藏宝海湾
+Burning Steppes	燃烧平原
+C'Thun	克苏恩
+Cat Druid	猫德
+Chromaggus	克洛玛古斯
+Cleanse	净化
+Combat Rogue	战斗贼
+Counterspell	反制
+Crit	暴击
+Crossroads	十字路口
+Cure Disease	解疾病
+Cure Poison	解毒
+DKP raid	DKP团
+DPS	输出
+Demo Lock	恶魔术
+Demonology Warlock	恶魔术
+Destro Lock	毁灭术
+Destruction Warlock	毁灭术
+Disc Priest	戒律牧
+Discipline Priest	戒律牧
+Divine Shield	圣盾术
+Eastern Kingdoms	东部王国
+Eastern Plaguelands	东瘟疫之地
+Elemental Shaman	元素萨
+Enchant	附魔
+Enhancement Shaman	增强萨
+Fear Ward	反恐惧
+Felwood	费伍德森林
+Feral Druid	野德
+Fire Mage	火法
+Flask of Distilled Wisdom	精灵合剂
+Flask of Titans	泰坦合剂
+Focus fire	集火
+Frost Mage	冰法
+Fury Warrior	狂战
+Gem	宝石
+Goldshire	闪金镇
+Golemagg	古雷曼格
+Greed	贪婪
+Guild	公会
+Hakkar	哈卡
+Hit rating	命中率
+Horde	部落
+Innervate	唤醒
+Kalimdor	卡利姆多
+Karazhan Crypt	卡拉赞墓穴
+Kel'Thuzad	克尔苏加德
+Kick	脚踢
+Kite	风筝
+Kiting	风筝
+Leave raid	退团
+Lucifron	鲁西弗隆
+MT	主坦
+Magmadar	玛格曼达
+Majordomo	大管家
+Marksmanship Hunter	射击猎
+Moonglade	月光林地
+Nefarian	奈法利安
+Newbie	萌新
+Noob	菜鸟
+OS	副天赋
+OT	副坦
+Opener	起手
+Ostarius	奥兹塔里亚斯
+Party	小队
+Patchwerk	缝合怪
+Pop cooldown	开CD
+Positioning	站位
+Prot Warrior	防战
+Pummel	拳击
+Quel'Serrar	奎尔塞拉
+Quest	任务
+Queue	排队
+RL	团长
+Ragnaros	拉格纳罗斯
+Raid Leader	团长
+Rallying Cry of the Dragonslayer	龙头BUFF
+Razorgore	拉佐格尔
+Relog	重登
+Reserve	保留
+Reset	重置
+Ret Paladin	惩戒骑
+Retribution Paladin	惩戒骑
+Sapphiron	萨菲隆
+Save cooldown	留CD
+Scarlet Enclave	血色领地
+Shadow Priest	暗牧
+Shield Bash	盾击
+Shield Wall	盾墙
+Silithus	希利苏斯
+Silvermoon	银月城
+Silvermoon City	银月城
+Songflower	花BUFF
+Spell Power	法术强度
+Spirit of Zandalar	心火
+Spread	分散
+Stamina	耐力
+Stranglethorn Vale	荆棘谷
+Subtlety Rogue	敏锐贼
+Sulfuras	萨弗拉斯
+Survival Hunter	生存猎
+Switch target	转火
+Tanaris	塔纳利斯
+The Crossroads	十字路口
+Theramore	塞拉摩
+Threat	仇恨
+Thunderfury	雷霆之怒
+Tower of Karazhan	卡拉赞之塔
+Uldum	奥丹姆
+Vaelastrasz	瓦拉斯塔兹
+Veteran	老兵
+Warchief's Blessing	酋长BUFF
+Western Plaguelands	西瘟疫之地
+Whisper me	密我
+Winterspring	冬泉谷
+addon	插件
+affliction lock	痛苦术
+affliction warlock	痛苦术
+alliance	联盟
+alt	小号
+arcane mage	奥法
+armor	护甲
+arms warrior	武器战
+ashbringer	灰烬使者
+ashkandi	阿什坎迪
+assassination rogue	刺杀贼
+attack power	攻击强度
+azshara	艾萨拉
+baron rivendare	瑞文戴尔男爵
+bear druid	熊德
+beast mastery hunter	兽王猎
+best in slot	毕业装
+bis	毕业装
+blackrock mountain	黑石山
+blasted lands	诅咒之地
+blessing of kings	王者祝福
+blessing of light	光明祝福
+blessing of might	力量祝福
+blessing of protection	保护祝福
+blessing of salvation	拯救祝福
+blessing of wisdom	智力祝福
+bm hunter	兽王猎
+boomkin	枭兽形态
+booty bay	藏宝海湾
+bot	脚本
+burning steppes	燃烧平原
+c'thun	克苏恩
+camping	蹲点
+caster DPS	法系输出
+caster dps	法系输出
+casual	休闲
+cat druid	猫德
+chromaggus	克洛玛古斯
+cleanse	净化
+combat rogue	战斗贼
+convert to raid	转团
+counterspell	反制
+crit	暴击
+crossroads	十字路口
+cure disease	解疾病
+cure poison	解毒
+demo lock	恶魔术
+demonology warlock	恶魔术
+destro lock	毁灭术
+destruction warlock	毁灭术
+disc priest	戒律牧
+discipline priest	戒律牧
+divine shield	圣盾术
+dkp raid	DKP团
+dps	输出
+duo run	双刷
+eastern kingdoms	东部王国
+eastern plaguelands	东瘟疫之地
+elemental shaman	元素萨
+elite mob	精英怪
+enchant	附魔
+enhancement shaman	增强萨
+faction	阵营
+fear ward	反恐惧
+felwood	费伍德森林
+feral druid	野德
+fire mage	火法
+flask of distilled wisdom	精灵合剂
+flask of titans	泰坦合剂
+focus fire	集火
+frost mage	冰法
+fury warrior	狂战
+ganking	打野
+gem	宝石
+goldshire	闪金镇
+golemagg	古雷曼格
+greed	贪婪
+grind run	搬砖
+guild	公会
+hakkar	哈卡
+hit rating	命中率
+horde	部落
+in combat	进战斗
+innervate	唤醒
+kalimdor	卡利姆多
+karazhan crypt	卡拉赞墓穴
+kel'thuzad	克尔苏加德
+kick	脚踢
+kite	风筝
+kiting	风筝
+leave raid	退团
+lucifron	鲁西弗隆
+magmadar	玛格曼达
+majordomo	大管家
+marksmanship hunter	射击猎
+melee DPS	近战输出
+melee dps	近战输出
+moonglade	月光林地
+nefarian	奈法利安
+newbie	萌新
+noob	菜鸟
+opener	起手
+out of combat	脱战
+party	小队
+patchwerk	缝合怪
+pop cooldown	开CD
+positioning	站位
+prot warrior	防战
+pummel	拳击
+quest	任务
+queue	排队
+ragnaros	拉格纳罗斯
+raid leader	团长
+rallying cry	龙头BUFF
+ranged DPS	远程输出
+ranged dps	远程输出
+razorgore	拉佐格尔
+relog	重登
+report	举报
+reserve	保留
+reset	重置
+ret paladin	惩戒骑
+retribution paladin	惩戒骑
+sapphiron	萨菲隆
+save cooldown	留CD
+scarlet enclave	血色领地
+server first	首杀
+server first kill	首杀
+shadow priest	暗牧
+shield bash	盾击
+shield wall	盾墙
+silithus	希利苏斯
+silvermoon city	银月城
+solo run	单刷
+songflower	花BUFF
+speed clear	速刷
+speed clear raid	速刷团
+speed run	速通
+spell power	法术强度
+spirit of zandalar	心火
+spread	分散
+stamina	耐力
+stranglethorn vale	荆棘谷
+subtlety rogue	敏锐贼
+sulfuras	萨弗拉斯
+survival hunter	生存猎
+switch target	转火
+tanaris	塔纳利斯
+theramore	塞拉摩
+threat	仇恨
+thunderfury	雷霆之怒
+tower of karazhan	卡拉赞之塔
+trash mob	小怪
+uldum	奥丹姆
+vaelastrasz	瓦拉斯塔兹
+veteran	老兵
+warchief's blessing	酋长BUFF
+western plaguelands	西瘟疫之地
+whisper me	密我
+winterspring	冬泉谷
+# Added for the proxy port (not in the 1.12 glossary)
+LF	求
+lf	求
