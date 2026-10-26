@@ -509,3 +509,6 @@ FodyWeavers.xsd
 .idea/
 *.DotSettings
 debug.*
+
+# Chat translation cache (other players' chat): never commit
+translation-cache.tsv
