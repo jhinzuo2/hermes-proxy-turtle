@@ -411,6 +411,27 @@ namespace HermesProxy.World.Client
             return item != null || sparse != null || effects;
         }
 
+        // "Transmogrified to:" on other players' gear. Capycraft shows a transmogged slot as a server-made copy
+        // (id 100000 and up, the real item's name and stats, the look's display); the real ids are below that.
+        // Mark it with the client item we draw for that look (see ResolveVisibleItemId), unless that is the
+        // same item. Returns the ItemModifiedAppearance id, 0 = no mark.
+        uint InspectTransmogMark(uint itemId)
+        {
+            const uint FirstTransmogCopyId = 100000;
+            if (itemId < FirstTransmogCopyId || GameData.IsItemKnownToClient(itemId))
+                return 0;
+            ItemTemplate template = GameData.GetItemTemplate(itemId);
+            if (template == null)
+                return 0;
+            uint shown = GameData.GetClientItemIdWithDisplayId(template.DisplayID, template.InventoryType);
+            if (shown == 0 || GameData.GetClientItemName(shown) == template.Name[0])
+                return 0;
+            var modAppearance = GameData.GetItemModifiedAppearanceByItemId(shown);
+            uint mark = modAppearance != null ? (uint)modAppearance.Id : 0;
+            Framework.Logging.Log.Print(Framework.Logging.LogType.Storage, $"[InspectTransmog] #{itemId} \"{template.Name[0]}\" display {template.DisplayID} -> client item #{shown} \"{GameData.GetClientItemName(shown)}\" mark {mark}");
+            return mark;
+        }
+
         [PacketHandler(Opcode.SMSG_INSPECT_RESULT)]
         [PacketHandler(Opcode.SMSG_INSPECT_TALENT)]
         void HandleInspectResult(WorldPacket packet)
@@ -477,6 +498,9 @@ namespace HermesProxy.World.Client
                                 InspectItemData itemData = new InspectItemData();
                                 itemData.Index = i;
                                 itemData.Item.ItemID = itemId;
+                                uint transmog = InspectTransmogMark(itemId);
+                                if (transmog != 0)
+                                    itemData.Item.Modifications.Values.Add(new ItemMod(transmog, ItemModifier.TransmogAppearanceAllSpecs));
                                 inspect.DisplayInfo.Items.Add(itemData);
                             }
                         }

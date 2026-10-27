@@ -83,6 +83,14 @@ namespace HermesProxy.World
             return "";
         }
 
+        // Name of an item, also for client items the server was never asked about.
+        public static string GetClientItemName(uint entry)
+        {
+            if (ItemSparseRecordsStore.TryGetValue(entry, out ItemSparseRecord row) && !string.IsNullOrEmpty(row.Name1))
+                return row.Name1;
+            return GetItemName(entry);
+        }
+
         public static void StoreItemTemplate(uint entry, ItemTemplate template)
         {
             if (ItemTemplates.ContainsKey(entry))
