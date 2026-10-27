@@ -1,0 +1,5 @@
+## Interface: 11200
+## Title: BoatClock
+## Notes: Logs when a ship starts/stops carrying you, with the PC clock (compare clients side by side). For 1.14 set Interface to 11402.
+## SavedVariables: BoatClockLog
+BoatClock.lua
