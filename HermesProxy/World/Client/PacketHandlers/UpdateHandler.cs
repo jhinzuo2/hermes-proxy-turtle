@@ -583,6 +583,9 @@ namespace HermesProxy.World.Client
 
             foreach (var auraUpdate in auraUpdates)
                 SendPacketToClient(auraUpdate);
+
+            if (updateObject.ObjectUpdates.Count != 0)
+                UpdateHitDisplay(); // gear or auras may have changed
         }
 
         public void ReadNearObjectsBlock(WorldPacket packet, object index)

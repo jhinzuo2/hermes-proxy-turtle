@@ -27,6 +27,8 @@ namespace HermesProxy.World.Client
                 packet.ReadInt16();
             }
             SendPacketToClient(spells);
+            ForgetKnownSpells();
+            NoteKnownSpells(spells.KnownSpells, null);
 
             ushort cooldownCount = packet.ReadUInt16();
             if (cooldownCount != 0)
@@ -86,6 +88,7 @@ namespace HermesProxy.World.Client
             spells.SpellID.Add(spellId);
             spells.Superceded.Add(supercededId);
             SendPacketToClient(spells);
+            NoteKnownSpells(new[] { spellId }, new[] { supercededId });
         }
 
         [PacketHandler(Opcode.SMSG_LEARNED_SPELL)]
@@ -95,6 +98,7 @@ namespace HermesProxy.World.Client
             uint spellId = packet.ReadUInt32();
             spells.Spells.Add(spellId);
             SendPacketToClient(spells);
+            NoteKnownSpells(new[] { spellId }, null);
         }
 
         [PacketHandler(Opcode.SMSG_SEND_UNLEARN_SPELLS)]
@@ -121,6 +125,7 @@ namespace HermesProxy.World.Client
                 spellId = packet.ReadUInt16();
             spells.Spells.Add(spellId);
             SendPacketToClient(spells);
+            NoteKnownSpells(null, new[] { spellId });
         }
 
         [PacketHandler(Opcode.SMSG_CAST_FAILED)]

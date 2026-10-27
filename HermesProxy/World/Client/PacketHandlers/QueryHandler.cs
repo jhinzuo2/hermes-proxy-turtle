@@ -535,6 +535,7 @@ namespace HermesProxy.World.Client
                 SendPacketToClient(sparseReply);
             }
             ResendPendingVisibleItems((uint)entry.Key, true);
+            UpdateHitDisplay(); // in case we wear it
         }
 
         // Live hotfix pushes for records the client already has (ItemSparse of client-known items, e.g. Turtle stat

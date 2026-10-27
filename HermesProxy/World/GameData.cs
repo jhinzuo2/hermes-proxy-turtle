@@ -612,6 +612,7 @@ namespace HermesProxy.World
             LoadItemModifiedAppearance();
             LoadClientItemAppearances();
             LoadItemEffect();
+            LoadHitSpells();
             LoadItemSpellsData();
             LoadItemDisplayIdToFileDataId();
             LoadBattlegrounds();
@@ -998,6 +999,25 @@ namespace HermesProxy.World
                     modifiedAppearance.OrderIndex = Int32.Parse(fields[4]);
                     modifiedAppearance.TransmogSourceTypeEnum = Int32.Parse(fields[5]);
                     ItemModifiedAppearanceStore.Add((uint)modifiedAppearance.Id, modifiedAppearance);
+                }
+            }
+        }
+
+        // Spells that give hit chance (tools/turtle/hit-spells.py): spell -> melee/ranged hit %, spell hit %.
+        public static Dictionary<uint, (int Hit, int SpellHit)> HitSpells = new();
+        public static void LoadHitSpells()
+        {
+            var path = Path.Combine("CSV", $"HitSpells{ModernVersion.ExpansionVersion}.csv");
+            if (!File.Exists(path))
+                return;
+            using (TextFieldParser csvParser = new TextFieldParser(path))
+            {
+                csvParser.SetDelimiters(new string[] { "," });
+                csvParser.ReadLine(); // SpellId,Hit,SpellHit
+                while (!csvParser.EndOfData)
+                {
+                    string[] fields = csvParser.ReadFields();
+                    HitSpells[uint.Parse(fields[0])] = (int.Parse(fields[1]), int.Parse(fields[2]));
                 }
             }
         }
@@ -4387,6 +4407,8 @@ namespace HermesProxy.World
         // alternative tier sets) and Turtle changed the bonuses of many others, so send every set with its bonuses.
         // A set's bonus rows take over the ids of the client's own rows for it; the client's leftovers are removed.
         // Layouts 189535BF (ItemSet) and 96588F97 (ItemSetSpell), WoWDBDefs 1.14.0-1.14.3.
+        // Item set -> its bonus spells and the pieces each needs (from LoadItemSetHotfixes).
+        public static Dictionary<uint, List<(uint SpellId, byte Threshold)>> ItemSetBonuses = new();
         public static void LoadItemSetHotfixes()
         {
             var path = Path.Combine("CSV", "Hotfix", $"ItemSet{ModernVersion.ExpansionVersion}.csv");
@@ -4470,6 +4492,9 @@ namespace HermesProxy.World
                             continue;
                         uint rowId = ownRows != null && used < ownRows.Count ? ownRows[used++] : nextSpellRowId++;
                         AddSpellRow(rowId, HotfixStatus.Valid, setId, spellId, byte.Parse(fields[29 + i]));
+                        if (!ItemSetBonuses.TryGetValue(setId, out var bonuses))
+                            ItemSetBonuses[setId] = bonuses = new();
+                        bonuses.Add((spellId, byte.Parse(fields[29 + i])));
                     }
                     for (; ownRows != null && used < ownRows.Count; used++)
                         AddSpellRow(ownRows[used], HotfixStatus.RecordRemoved, setId, 0, 0);
