@@ -240,6 +240,8 @@ namespace HermesProxy.World.Server
                 client.ForgetSentTransmogCopies();
                 client.ResendOwnTransmogLines();
             }
+            else if (text.StartsWith("I|") && client != null)
+                client.RequestInspectTransmogs(text.Substring(2));
             return true;
         }
 

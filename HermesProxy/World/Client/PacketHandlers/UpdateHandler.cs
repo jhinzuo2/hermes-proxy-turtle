@@ -153,6 +153,17 @@ namespace HermesProxy.World.Client
             SendTransmogAddonMessage(text);
         }
 
+        // Asks an inspected player's Turtle transmog UI for their transmogs, the way the Turtle client does: an
+        // addon message to the guild channel with the prefix TW_CHAT_MSG_WHISPER<name>, which the server delivers
+        // to that player as a whisper. They answer with INSTransmogs (see HandleServerChatMessage).
+        public void RequestInspectTransmogs(string playerName)
+        {
+            if (string.IsNullOrEmpty(playerName) || playerName.Contains('>'))
+                return;
+            Log.Print(LogType.Storage, $"[InspectTransmog] asking {playerName}");
+            SendMessageChatVanilla(ChatMessageTypeVanilla.Guild, (uint)Language.Addon, $"TW_CHAT_MSG_WHISPER<{playerName}>\tINSShowTransmogs", "", "");
+        }
+
         // The addon asks on login/reload (it missed what was sent before it loaded).
         public void ResendOwnTransmogLines()
         {

@@ -222,7 +222,22 @@ namespace HermesProxy.World.Client
                 }
                 return;
             }
-            
+
+            // Turtle transmog UI of an inspected player answering our INSShowTransmogs (see RequestInspectTransmogs):
+            // "TW_CHAT_MSG_WHISPER\tINSTransmogs;slot;transmogItemId;equippedItemId" ("start" first). The prefix is
+            // too long for a 1.14 addon to register, so pass it to HermesTransmog as T|sender|slot|transmog|equipped.
+            if (language == (uint)Language.Addon && text.StartsWith("TW_CHAT_MSG_WHISPER\tINSTransmogs;"))
+            {
+                string[] parts = text.Substring("TW_CHAT_MSG_WHISPER\tINSTransmogs;".Length).Split(';');
+                string from = !string.IsNullOrEmpty(senderName) ? senderName : (sender != null ? GetSession().GameState.GetPlayerName(sender) : "");
+                if (parts.Length >= 3 && !string.IsNullOrEmpty(from))
+                {
+                    Log.Print(LogType.Storage, $"[InspectTransmog] {from}: {string.Join(";", parts)}");
+                    SendTransmogAddonMessage($"T|{from}|{parts[0]}|{parts[1]}|{parts[2]}");
+                }
+                return;
+            }
+
             string addonPrefix = "";
             if (!ChatPkt.CheckAddonPrefix(GetSession().GameState.AddonPrefixes, ref language, ref text, ref addonPrefix))
                 return;
