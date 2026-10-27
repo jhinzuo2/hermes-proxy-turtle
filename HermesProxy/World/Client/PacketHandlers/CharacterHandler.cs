@@ -1,4 +1,4 @@
-﻿using HermesProxy.Enums;
+using HermesProxy.Enums;
 using HermesProxy.World.Enums;
 using HermesProxy.World.Objects;
 using HermesProxy.World.Server.Packets;
@@ -373,13 +373,14 @@ namespace HermesProxy.World.Client
         // Server-only gear ids (Capycraft's own items, e.g. the alternative tier set variants, and transmog
         // copies) have no records on the client, so the inspect frame shows nothing for them. Send just their
         // Item/ItemSparse rows (name, icon, stats); never appearance records, those crashed the client.
-        void SendInspectItemRecords(uint itemId)
+        // Returns whether anything was sent.
+        bool SendInspectItemRecords(uint itemId)
         {
             if (GameData.IsItemKnownToClient(itemId))
-                return;
+                return false;
             ItemTemplate template = GameData.GetItemTemplate(itemId);
             if (template == null)
-                return;
+                return false;
 
             var item = GameData.GenerateItemUpdateIfNeeded(template);
             if (item != null)
@@ -396,6 +397,7 @@ namespace HermesProxy.World.Client
                 reply.Data = sparse.Hotfixes[0].HotfixContent;
                 SendPacketToClient(reply);
             }
+            return item != null || sparse != null;
         }
 
         [PacketHandler(Opcode.SMSG_INSPECT_RESULT)]
@@ -417,6 +419,7 @@ namespace HermesProxy.World.Client
             inspect.DisplayInfo.RaceId = cache.RaceId;
             inspect.DisplayInfo.SexId = cache.SexId;
 
+            bool sentItemRecords = false;
             var updates = GetSession().GameState.GetCachedObjectFieldsLegacy(inspect.DisplayInfo.GUID);
             if (updates != null)
             {
@@ -431,7 +434,7 @@ namespace HermesProxy.World.Client
                             uint itemId = updates[PLAYER_VISIBLE_ITEM_1_0 + i * offset].UInt32Value;
                             if (itemId != 0)
                             {
-                                SendInspectItemRecords(itemId);
+                                sentItemRecords |= SendInspectItemRecords(itemId);
                                 InspectItemData itemData = new InspectItemData();
                                 itemData.Index = i;
                                 itemData.Item.ItemID = itemId;
@@ -485,6 +488,15 @@ namespace HermesProxy.World.Client
             }
 
             SendPacketToClient(inspect);
+
+            // The client draws the inspect frame before it has applied the item records sent above ("?" icons
+            // until something redraws it), so send the same result again once they are in.
+            if (sentItemRecords)
+            {
+                var again = new InspectResult { DisplayInfo = inspect.DisplayInfo, GuildData = inspect.GuildData, LifetimeMaxRank = inspect.LifetimeMaxRank, Talents = inspect.Talents };
+                var session = GetSession();
+                _ = System.Threading.Tasks.Task.Delay(600).ContinueWith(_ => HermesProxy.Translation.TranslationSession.SendToClient(session, again));
+            }
         }
 
         [PacketHandler(Opcode.MSG_INSPECT_HONOR_STATS, ClientVersionBuild.Zero, ClientVersionBuild.V2_0_1_6180)]
