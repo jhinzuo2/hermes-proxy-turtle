@@ -1,4 +1,4 @@
-﻿//#define DEBUG_UPDATES
+//#define DEBUG_UPDATES
 
 using Framework.GameMath;
 using Framework.Logging;
@@ -94,6 +94,7 @@ namespace HermesProxy.World.Client
             if (itemFields == null || !itemFields.ContainsKey(OBJECT_FIELD_ENTRY))
                 return; // not created yet: ApplyOwnTransmogMark does it on create
             uint? mark = ComputeOwnTransmogMark(slot, itemFields[OBJECT_FIELD_ENTRY].UInt32Value);
+            Log.Print(LogType.Storage, $"[TransmogMark] slot {slot} item {itemFields[OBJECT_FIELD_ENTRY].UInt32Value} -> {(mark == null ? "unknown" : mark.ToString())} (refresh)");
             if (mark == null || (_ownTransmogMarks.TryGetValue(itemGuid, out uint old) && old == mark))
                 return;
             _ownTransmogMarks[itemGuid] = mark.Value;
@@ -123,6 +124,7 @@ namespace HermesProxy.World.Client
                         entry = cached[OBJECT_FIELD_ENTRY].UInt32Value;
                 }
                 uint? mark = ComputeOwnTransmogMark(slot, entry);
+                Log.Print(LogType.Storage, $"[TransmogMark] slot {slot} item {entry} -> {(mark == null ? "unknown" : mark.ToString())} (create)");
                 if (mark == null)
                     return;
                 _ownTransmogMarks[updateData.Guid] = mark.Value;

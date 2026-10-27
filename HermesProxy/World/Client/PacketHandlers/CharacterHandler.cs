@@ -467,6 +467,12 @@ namespace HermesProxy.World.Client
                             uint itemId = updates[PLAYER_VISIBLE_ITEM_1_0 + i * offset].UInt32Value;
                             if (itemId != 0)
                             {
+                                // Diagnostic: all sub-fields of this visible slot (where does Turtle keep the transmog source?)
+                                var sub = new System.Text.StringBuilder();
+                                for (int f = 0; f < offset; f++)
+                                    if (updates.ContainsKey(PLAYER_VISIBLE_ITEM_1_0 + i * offset + f) && updates[PLAYER_VISIBLE_ITEM_1_0 + i * offset + f].UInt32Value != 0)
+                                        sub.Append($" f{f}={updates[PLAYER_VISIBLE_ITEM_1_0 + i * offset + f].UInt32Value}");
+                                Framework.Logging.Log.Print(Framework.Logging.LogType.Storage, $"[InspectSlot] slot {i}:{sub}");
                                 sentItemRecords |= SendInspectItemRecords(itemId);
                                 InspectItemData itemData = new InspectItemData();
                                 itemData.Index = i;
