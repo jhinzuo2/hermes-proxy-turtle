@@ -229,9 +229,11 @@ namespace HermesProxy.World.Client
             // Diagnostic: Turtle addon traffic from the server (does anyone answer INSShowTransmogs, and how?)
             if (language == (uint)Language.Addon && text.StartsWith("TW_") && !text.StartsWith("TW_TRANSMOG\tAvailableTransmogs"))
                 Log.Print(LogType.Storage, $"[TurtleAddon] {chatType} from {(string.IsNullOrEmpty(senderName) && sender != null ? GetSession().GameState.GetPlayerName(sender) : senderName)}: {(text.Length > 160 ? text.Substring(0, 160) : text)}");
-            if (language == (uint)Language.Addon && text.StartsWith("TW_CHAT_MSG_WHISPER\tINSTransmogs;"))
+            // The server puts two tabs before the message (an empty target), so skip any number of them.
+            string inspectAnswer = language == (uint)Language.Addon && text.StartsWith("TW_CHAT_MSG_WHISPER\t") ? text.Substring("TW_CHAT_MSG_WHISPER\t".Length).TrimStart('\t') : "";
+            if (inspectAnswer.StartsWith("INSTransmogs;"))
             {
-                string[] parts = text.Substring("TW_CHAT_MSG_WHISPER\tINSTransmogs;".Length).Split(';');
+                string[] parts = inspectAnswer.Substring("INSTransmogs;".Length).Split(';');
                 string from = !string.IsNullOrEmpty(senderName) ? senderName : (sender != null ? GetSession().GameState.GetPlayerName(sender) : "");
                 if (parts.Length >= 3 && !string.IsNullOrEmpty(from))
                 {
