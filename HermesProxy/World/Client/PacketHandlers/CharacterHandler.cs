@@ -417,7 +417,13 @@ namespace HermesProxy.World.Client
         {
             InspectResult inspect = new InspectResult();
             if (packet.GetUniversalOpcode(false) == Opcode.SMSG_INSPECT_RESULT)
+            {
                 inspect.DisplayInfo.GUID = packet.ReadGuid().To128(GetSession().GameState);
+                // Diagnostic: does Capycraft send more than the guid (e.g. real items / transmog for the 1.18 client)?
+                byte[] rest = packet.ReadToEnd();
+                if (rest.Length > 0)
+                    Framework.Logging.Log.Print(Framework.Logging.LogType.Storage, $"[InspectExtra] {rest.Length} bytes: {Convert.ToHexString(rest, 0, Math.Min(rest.Length, 400))}");
+            }
             else
                 inspect.DisplayInfo.GUID = packet.ReadPackedGuid().To128(GetSession().GameState);
 
