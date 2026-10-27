@@ -148,13 +148,9 @@ namespace HermesProxy.World.Server.Packets
                     uint period = GameData.GetTransportPeriod((uint)ObjectData.EntryID);
                     if (period == 0)
                         period = 300000;
-                    // Turtle sends some map-crossing ships at (0,0,0); the 1.14 client then never shows them.
-                    if (CreateData.MoveInfo.Position.X == 0 && CreateData.MoveInfo.Position.Y == 0 && CreateData.MoveInfo.Position.Z == 0)
-                    {
-                        var dock = GameData.GetTransportDockPosition((uint)ObjectData.EntryID, (uint)(GlobalSession.GameState.CurrentMapId ?? 0));
-                        if (dock != null)
-                            CreateData.MoveInfo.Position = dock.Value;
-                    }
+                    int timeOffset = GameData.GetTransportTimeOffset((uint)ObjectData.EntryID);
+                    if (timeOffset != 0 && CreateData.MoveInfo.TransportPathTimer != 0)
+                        CreateData.MoveInfo.TransportPathTimer = (uint)(CreateData.MoveInfo.TransportPathTimer + timeOffset);
                     if (Framework.Settings.LogCreatureCreates)
                         Framework.Logging.Log.Print(Framework.Logging.LogType.Server, $"[TransportCreate] entry={ObjectData.EntryID} type={GameObjectData.TypeID} state={GameObjectData.State} dynFlags={ObjectData.DynamicFlags} level={GameObjectData.Level} pos={CreateData.MoveInfo.Position} timer={CreateData.MoveInfo.TransportPathTimer} period={period}");
                     if (GameObjectData.Level == null)

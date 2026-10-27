@@ -41,8 +41,7 @@ namespace HermesProxy.World
         public static Dictionary<uint, CreatureDisplayInfo> CreatureDisplayInfos = new Dictionary<uint, CreatureDisplayInfo>();
         public static Dictionary<uint, CreatureModelCollisionHeight> CreatureModelCollisionHeights = new Dictionary<uint, CreatureModelCollisionHeight>();
         public static Dictionary<uint, uint> TransportPeriods = new Dictionary<uint, uint>();
-        public static Dictionary<uint, uint> TransportPaths = new Dictionary<uint, uint>();
-        public static Dictionary<uint, List<TaxiPathNode>> TaxiPathNodesByPath = new Dictionary<uint, List<TaxiPathNode>>();
+        public static Dictionary<uint, int> TransportTimeOffsets = new Dictionary<uint, int>();
         public static Dictionary<uint, string> AreaNames = new Dictionary<uint, string>();
         public static Dictionary<uint, uint> RaceFaction = new Dictionary<uint, uint>();
         public static HashSet<uint> DispellSpells = new HashSet<uint>();
@@ -446,23 +445,11 @@ namespace HermesProxy.World
             return 0;
         }
 
-        // Where to put a transport the server created at (0,0,0) (Turtle's Stormwind ship): its first stop
-        // (a node with a delay) on the given map, else its first node there. Null if the path is unknown.
-        public static Framework.GameMath.Vector3? GetTransportDockPosition(uint entry, uint mapId)
+        // Milliseconds added to a transport's path timer before it goes to the client (negative = later), for routes
+        // the client sails with different timing than the server (Turtle's Stormwind ship: client ~40 s early).
+        public static int GetTransportTimeOffset(uint entry)
         {
-            if (!TransportPaths.TryGetValue(entry, out uint taxiPath) ||
-                !TaxiPathNodesByPath.TryGetValue(taxiPath, out var nodes))
-                return null;
-            TaxiPathNode first = null;
-            foreach (var node in nodes)
-            {
-                if (node.mapId != mapId)
-                    continue;
-                if (node.delay > 0)
-                    return new Framework.GameMath.Vector3(node.x, node.y, node.z);
-                first ??= node;
-            }
-            return first != null ? new Framework.GameMath.Vector3(first.x, first.y, first.z) : null;
+            return TransportTimeOffsets.TryGetValue(entry, out int offset) ? offset : 0;
         }
 
         public static string GetAreaName(uint id)
@@ -1351,9 +1338,9 @@ namespace HermesProxy.World
                     uint entry = UInt32.Parse(fields[0]);
                     uint period = UInt32.Parse(fields[1]);
                     TransportPeriods.Add(entry, period);
-                    // optional 3rd column: the transport's taxi path (GameObject data0) as the client knows it
-                    if (fields.Length > 2 && UInt32.TryParse(fields[2], out uint taxiPath) && taxiPath != 0)
-                        TransportPaths[entry] = taxiPath;
+                    // optional 3rd column: time offset in ms for the client (see GetTransportTimeOffset)
+                    if (fields.Length > 2 && Int32.TryParse(fields[2], out int timeOffset) && timeOffset != 0)
+                        TransportTimeOffsets[entry] = timeOffset;
                 }
             }
         }
@@ -1675,9 +1662,6 @@ namespace HermesProxy.World
                     TaxiPathNodes.Add(taxiPathNode.Id, taxiPathNode);
                 }
             }
-            foreach (var group in TaxiPathNodes.Values.GroupBy(node => node.pathId))
-                TaxiPathNodesByPath[group.Key] = group.OrderBy(node => node.nodeIndex).ToList();
-
             // calculate distances between nodes
             for (uint i = 0; i < TaxiPaths.Count; i++)
             {
