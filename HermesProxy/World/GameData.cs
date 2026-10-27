@@ -1796,6 +1796,8 @@ namespace HermesProxy.World
         public const uint HotfixCreatureDisplayInfoExtraBegin = 280000;
         public const uint HotfixCreatureDisplayInfoOptionBegin = 290000;
         public const uint HotfixSpellItemEnchantmentBegin = 300000;
+        public const uint HotfixItemSetBegin = 310000;
+        public const uint HotfixItemSetSpellBegin = 320000;
         public static Dictionary<uint, HotfixRecord> Hotfixes = new Dictionary<uint, HotfixRecord>();
         public static void LoadHotfixes()
         {
@@ -1818,6 +1820,7 @@ namespace HermesProxy.World
             LoadCreatureDisplayInfoExtraHotfixes();
             LoadCreatureDisplayInfoOptionHotfixes();
             LoadSpellItemEnchantmentHotfixes();
+            LoadItemSetHotfixes();
         }
         
         public static void LoadAreaTriggerHotfixes()
@@ -4380,6 +4383,101 @@ namespace HermesProxy.World
         }
         // Enchants the client has no record for (Turtle's +1..5% Haste arcanums 3016-3020): without one the tooltip
         // line is missing. Layout of 1.14.0-1.14.3 / 2.5.x (WoWDBDefs layout 2DF904D2). Optional file.
+        // Turtle's item sets (tools/turtle/item-sets.py). The client knows only 172 of Turtle's 359 sets (none of the
+        // alternative tier sets) and Turtle changed the bonuses of many others, so send every set with its bonuses.
+        // A set's bonus rows take over the ids of the client's own rows for it; the client's leftovers are removed.
+        // Layouts 189535BF (ItemSet) and 96588F97 (ItemSetSpell), WoWDBDefs 1.14.0-1.14.3.
+        public static void LoadItemSetHotfixes()
+        {
+            var path = Path.Combine("CSV", "Hotfix", $"ItemSet{ModernVersion.ExpansionVersion}.csv");
+            var clientPath = Path.Combine("CSV", "Hotfix", $"ItemSetSpellClient{ModernVersion.ExpansionVersion}.csv");
+            if (!File.Exists(path) || !File.Exists(clientPath))
+                return;
+
+            // ID,ItemSetID of the client's own ItemSetSpell rows
+            var clientRows = new Dictionary<uint, List<uint>>();
+            uint nextSpellRowId = 0;
+            using (TextFieldParser csvParser = new TextFieldParser(clientPath))
+            {
+                csvParser.SetDelimiters(new string[] { "," });
+                csvParser.ReadLine();
+                while (!csvParser.EndOfData)
+                {
+                    string[] fields = csvParser.ReadFields();
+                    uint rowId = uint.Parse(fields[0]);
+                    uint setId = uint.Parse(fields[1]);
+                    if (!clientRows.TryGetValue(setId, out var rows))
+                        clientRows[setId] = rows = new List<uint>();
+                    rows.Add(rowId);
+                    nextSpellRowId = Math.Max(nextSpellRowId, rowId + 1);
+                }
+            }
+
+            uint setCounter = 0;
+            uint spellCounter = 0;
+            void AddSpellRow(uint rowId, HotfixStatus status, uint setId, uint spellId, byte threshold)
+            {
+                spellCounter++;
+                HotfixRecord record = new HotfixRecord();
+                record.Status = status;
+                record.TableHash = DB2Hash.ItemSetSpell;
+                record.HotfixId = HotfixItemSetSpellBegin + spellCounter;
+                record.UniqueId = record.HotfixId;
+                record.RecordId = rowId;
+                if (status == HotfixStatus.Valid)
+                {
+                    record.HotfixContent.WriteUInt16(0);        // ChrSpecID
+                    record.HotfixContent.WriteUInt32(spellId);  // SpellID
+                    record.HotfixContent.WriteUInt8(threshold); // Threshold
+                    record.HotfixContent.WriteUInt32(setId);    // ItemSetID
+                }
+                Hotfixes.Add(record.HotfixId, record);
+            }
+
+            using (TextFieldParser csvParser = new TextFieldParser(path))
+            {
+                csvParser.SetDelimiters(new string[] { "," });
+                csvParser.HasFieldsEnclosedInQuotes = true;
+
+                // ID,Name,RequiredSkill,RequiredSkillRank,Item0..16,Spell0..7,Threshold0..7
+                csvParser.ReadLine();
+                while (!csvParser.EndOfData)
+                {
+                    string[] fields = csvParser.ReadFields();
+                    uint setId = uint.Parse(fields[0]);
+
+                    setCounter++;
+                    HotfixRecord record = new HotfixRecord();
+                    record.Status = HotfixStatus.Valid;
+                    record.TableHash = DB2Hash.ItemSet;
+                    record.HotfixId = HotfixItemSetBegin + setCounter;
+                    record.UniqueId = record.HotfixId;
+                    record.RecordId = setId;
+                    record.HotfixContent.WriteCString(fields[1]);                  // Name_lang
+                    record.HotfixContent.WriteUInt32(0);                           // SetFlags
+                    record.HotfixContent.WriteUInt32(uint.Parse(fields[2]));       // RequiredSkill
+                    record.HotfixContent.WriteUInt16(ushort.Parse(fields[3]));     // RequiredSkillRank
+                    for (int i = 0; i < 17; i++)
+                        record.HotfixContent.WriteUInt32(uint.Parse(fields[4 + i])); // ItemID
+                    Hotfixes.Add(record.HotfixId, record);
+
+                    clientRows.TryGetValue(setId, out var ownRows);
+                    int used = 0;
+                    for (int i = 0; i < 8; i++)
+                    {
+                        uint spellId = uint.Parse(fields[21 + i]);
+                        if (spellId == 0)
+                            continue;
+                        uint rowId = ownRows != null && used < ownRows.Count ? ownRows[used++] : nextSpellRowId++;
+                        AddSpellRow(rowId, HotfixStatus.Valid, setId, spellId, byte.Parse(fields[29 + i]));
+                    }
+                    for (; ownRows != null && used < ownRows.Count; used++)
+                        AddSpellRow(ownRows[used], HotfixStatus.RecordRemoved, setId, 0, 0);
+                }
+            }
+            Log.Print(LogType.Storage, $"Loaded {setCounter} item sets with {spellCounter} bonus rows.");
+        }
+
         public static void LoadSpellItemEnchantmentHotfixes()
         {
             var path = Path.Combine("CSV", "Hotfix", $"SpellItemEnchantment{ModernVersion.ExpansionVersion}.csv");

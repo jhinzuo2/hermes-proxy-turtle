@@ -16,11 +16,35 @@ namespace HermesProxy.World.Client
 {
     public partial class WorldClient
     {
+        // Turtle changed the stats of some items the client knows (e.g. Helm of Endless Rage). We compare them with
+        // the client's records only when we get the item from the server, and the client never asks for an item
+        // in its own data, so on other players such items showed the client's stats. Ask for the gear we see once:
+        // the item answer turns a difference into a hotfix (SendItemUpdatesIfNeeded).
+        readonly HashSet<uint> _itemStatChecks = new();
+        void CheckClientItemStats(uint itemId)
+        {
+            if (!_itemStatChecks.Add(itemId))
+                return;
+            ItemTemplate template = GameData.GetItemTemplate(itemId);
+            if (template != null)
+            {
+                EnsureItemRecords(template);
+                return;
+            }
+            WorldPacket query = new WorldPacket(Opcode.CMSG_ITEM_QUERY_SINGLE);
+            query.WriteUInt32(itemId);
+            if (LegacyVersion.RemovedInVersion(ClientVersionBuild.V2_0_1_6180))
+                query.WriteGuid(WowGuid64.Empty);
+            SendPacketToServer(query);
+        }
+
         // Capycraft transmog shows a gear slot as a server-only item id (e.g. #171311) whose template carries
         // the transmogged look. The modern client has no data for it and draws nothing, so show a client-known
         // item with the same display instead, asking the server for the template first if we don't have it.
         uint ResolveVisibleItemId(WowGuid128 guid, int slot, uint itemId, ushort itemVisual)
         {
+            if (itemId != 0 && GameData.IsItemKnownToClient(itemId))
+                CheckClientItemStats(itemId);
             if (itemId == 0 || !Framework.Settings.ResolveUnknownVisibleItems || GameData.IsItemKnownToClient(itemId))
                 return itemId;
 
