@@ -102,6 +102,8 @@ frame:RegisterEvent("INSPECT_READY")
 frame:SetScript("OnEvent", function(_, event, prefix, text)
   if event == "PLAYER_ENTERING_WORLD" then
     toProxy("?") -- resend what we missed while loading
+    -- the real transmogs of our own gear; the Turtle UI asks too, but only ~10 s later
+    if IsInGuild() then C_ChatInfo.SendAddonMessage(TURTLE_PREFIX, "GetTransmogStatus", "GUILD") end
     return
   end
   if event == "INSPECT_READY" then

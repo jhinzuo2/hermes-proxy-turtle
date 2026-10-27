@@ -226,6 +226,9 @@ namespace HermesProxy.World.Client
             // Turtle transmog UI of an inspected player answering our INSShowTransmogs (see RequestInspectTransmogs):
             // "TW_CHAT_MSG_WHISPER\tINSTransmogs;slot;transmogItemId;equippedItemId" ("start" first). The prefix is
             // too long for a 1.14 addon to register, so pass it to HermesTransmog as T|sender|slot|transmog|equipped.
+            // Diagnostic: Turtle addon traffic from the server (does anyone answer INSShowTransmogs, and how?)
+            if (language == (uint)Language.Addon && text.StartsWith("TW_") && !text.StartsWith("TW_TRANSMOG\tAvailableTransmogs"))
+                Log.Print(LogType.Storage, $"[TurtleAddon] {chatType} from {(string.IsNullOrEmpty(senderName) && sender != null ? GetSession().GameState.GetPlayerName(sender) : senderName)}: {(text.Length > 160 ? text.Substring(0, 160) : text)}");
             if (language == (uint)Language.Addon && text.StartsWith("TW_CHAT_MSG_WHISPER\tINSTransmogs;"))
             {
                 string[] parts = text.Substring("TW_CHAT_MSG_WHISPER\tINSTransmogs;".Length).Split(';');

@@ -232,6 +232,8 @@ namespace HermesProxy.World.Server
         // HermesTransmog addon asking for the transmog lines again (after a login or /reload); never sent to the server.
         bool HandleTransmogAddonMessage(string prefix, string text)
         {
+            if (prefix.StartsWith("TW_"))
+                Log.Print(LogType.Storage, $"[TurtleAddon] to server: {prefix} {(text.Length > 120 ? text.Substring(0, 120) : text)}"); // diagnostic
             if (prefix != World.Client.WorldClient.TransmogAddonPrefix)
                 return false;
             var client = GetSession().WorldClient;
