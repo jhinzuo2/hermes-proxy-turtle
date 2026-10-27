@@ -156,12 +156,17 @@ namespace HermesProxy.World.Server.Packets
                             CreateData.MoveInfo.Position = dock.Value;
                     }
                     if (Framework.Settings.LogCreatureCreates)
-                        Framework.Logging.Log.Print(Framework.Logging.LogType.Server, $"[TransportCreate] entry={ObjectData.EntryID} pos={CreateData.MoveInfo.Position} timer={CreateData.MoveInfo.TransportPathTimer} period={period}");
+                        Framework.Logging.Log.Print(Framework.Logging.LogType.Server, $"[TransportCreate] entry={ObjectData.EntryID} type={GameObjectData.TypeID} state={GameObjectData.State} dynFlags={ObjectData.DynamicFlags} level={GameObjectData.Level} pos={CreateData.MoveInfo.Position} timer={CreateData.MoveInfo.TransportPathTimer} period={period}");
                     if (GameObjectData.Level == null)
                         GameObjectData.Level = (int)period;
                     if (ObjectData.DynamicFlags == null)
                         ObjectData.DynamicFlags = (((uint)(((float)(CreateData.MoveInfo.TransportPathTimer % period) / (float)period) * System.UInt16.MaxValue)) << 16);
                     GameObjectData.Flags = 1048616;
+                    // Ships/zeppelins (MO transports) that never stop must be GO_STATE_READY on a modern client
+                    // (as TrinityCore sends them): in state ACTIVE the client treats Level as the time to stop at
+                    // and keeps the ship where it is. Elevators (type 11) keep their own states.
+                    if (GameObjectData.TypeID == 15 || GameData.TransportPeriods.ContainsKey((uint)ObjectData.EntryID))
+                        GameObjectData.State = 1;
                 }
                 // Objects with a WMO model need the map-object flag too, for the same reason.
                 if (((GameObjectData.DisplayID != null && GameData.IsWmoGameObjectDisplay((uint)GameObjectData.DisplayID)) ||
