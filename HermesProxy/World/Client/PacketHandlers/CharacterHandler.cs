@@ -397,7 +397,18 @@ namespace HermesProxy.World.Client
                 reply.Data = sparse.Hotfixes[0].HotfixContent;
                 SendPacketToClient(reply);
             }
-            return item != null || sparse != null;
+            // the item's spells (green Equip/Use/Chance on hit lines); no appearance involved
+            bool effects = false;
+            for (byte i = 0; i < 5; i++)
+            {
+                var effect = GameData.GenerateItemEffectUpdateIfNeeded(template, i);
+                if (effect != null)
+                {
+                    SendPacketToClient(effect);
+                    effects = true;
+                }
+            }
+            return item != null || sparse != null || effects;
         }
 
         [PacketHandler(Opcode.SMSG_INSPECT_RESULT)]

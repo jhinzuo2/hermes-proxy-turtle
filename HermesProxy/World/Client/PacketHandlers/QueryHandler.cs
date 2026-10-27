@@ -540,15 +540,27 @@ namespace HermesProxy.World.Client
         // Live hotfix pushes for records the client already has (ItemSparse of client-known items, e.g. Turtle stat
         // changes) are ignored by the client; it does apply hotfixes it fetches itself from the announced list. So
         // after new item hotfixes, announce the list again (debounced: item answers come in bursts).
+        // The client then fetches the whole list again, so at most one announce per 15 s.
         System.Threading.Timer _hotfixAnnounceTimer;
+        DateTime _lastHotfixAnnounce = DateTime.MinValue;
         void ScheduleHotfixAnnounce()
         {
             var session = GetSession();
             lock (this)
             {
-                _hotfixAnnounceTimer?.Dispose();
+                if (_hotfixAnnounceTimer != null)
+                    return; // one is pending and will include this change
+                var wait = _lastHotfixAnnounce + TimeSpan.FromSeconds(15) - DateTime.Now;
+                if (wait < TimeSpan.FromSeconds(2))
+                    wait = TimeSpan.FromSeconds(2);
                 _hotfixAnnounceTimer = new System.Threading.Timer(_ =>
                 {
+                    lock (this)
+                    {
+                        _hotfixAnnounceTimer?.Dispose();
+                        _hotfixAnnounceTimer = null;
+                        _lastHotfixAnnounce = DateTime.Now;
+                    }
                     try
                     {
                         session.RealmSocket?.SendAvailableHotfixes();
@@ -557,7 +569,7 @@ namespace HermesProxy.World.Client
                     {
                         Log.Print(LogType.Error, $"Hotfix re-announce failed: {ex.Message}");
                     }
-                }, null, 2000, System.Threading.Timeout.Infinite);
+                }, null, wait, System.Threading.Timeout.InfiniteTimeSpan);
             }
         }
 

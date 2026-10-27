@@ -48,6 +48,7 @@ namespace HermesProxy.World.Client
         }
 
         static readonly HashSet<int> LoggedDisplayFallbacks = new();
+        static readonly HashSet<int> LoggedEnchantIds = new();
 
         // A creature display the client has no model for null-derefs it (ERROR #132, reading 0x10), so show
         // a known model instead (no model at all for mounts, which need a rideable one).
@@ -1407,6 +1408,9 @@ namespace HermesProxy.World.Client
                                 enchantment = new ItemEnchantment();
 
                             enchantment.ID = updates[idIndex].Int32Value;
+                            // Diagnostic: which enchant ids our own items carry (Turtle-only ones have no client text).
+                            if (enchantment.ID > 0 && LoggedEnchantIds.Add((int)enchantment.ID))
+                                Log.Print(LogType.Storage, $"[Enchant] id {enchantment.ID} slot {slot} on item {guid}");
                         }
                         if (updateMaskArray[durationIndex])
                         {
