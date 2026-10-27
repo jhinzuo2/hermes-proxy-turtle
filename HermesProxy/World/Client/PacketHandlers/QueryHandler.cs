@@ -505,9 +505,12 @@ namespace HermesProxy.World.Client
             // Diagnostic: what the server's gear-only ids (Capycraft transmog) are, e.g. for inspect.
             if (state.RequestedVisibleItemQueries.Contains((uint)entry.Key))
                 Log.Print(LogType.Storage, $"[VisibleItemTemplate] #{item.Entry} \"{item.Name[0]}\" class {item.Class}/{item.SubClass} inv {item.InventoryType} quality {item.Quality} display {item.DisplayID} ilvl {item.ItemLevel} reqLvl {item.RequiredLevel} armor {item.Armor}");
+            int hotfixVersion = GameData.HotfixVersion;
             if (!onlyForVisibleItem)
                 SendItemUpdatesIfNeeded(item);
             GameData.StoreItemTemplate((uint)entry.Key, item);
+            if (GameData.HotfixVersion != hotfixVersion)
+                ScheduleHotfixAnnounce();
 
             // Answer the client's DB queries for this item even when the server's item equals the client's
             // (no hotfix generated): without any reply the item stays "Retrieving item information".
@@ -532,6 +535,30 @@ namespace HermesProxy.World.Client
                 SendPacketToClient(sparseReply);
             }
             ResendPendingVisibleItems((uint)entry.Key, true);
+        }
+
+        // Live hotfix pushes for records the client already has (ItemSparse of client-known items, e.g. Turtle stat
+        // changes) are ignored by the client; it does apply hotfixes it fetches itself from the announced list. So
+        // after new item hotfixes, announce the list again (debounced: item answers come in bursts).
+        System.Threading.Timer _hotfixAnnounceTimer;
+        void ScheduleHotfixAnnounce()
+        {
+            var session = GetSession();
+            lock (this)
+            {
+                _hotfixAnnounceTimer?.Dispose();
+                _hotfixAnnounceTimer = new System.Threading.Timer(_ =>
+                {
+                    try
+                    {
+                        session.RealmSocket?.SendAvailableHotfixes();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Print(LogType.Error, $"Hotfix re-announce failed: {ex.Message}");
+                    }
+                }, null, 2000, System.Threading.Timeout.Infinite);
+            }
         }
 
         void SendItemUpdatesIfNeeded(ItemTemplate item)

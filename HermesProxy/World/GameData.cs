@@ -3256,10 +3256,14 @@ namespace HermesProxy.World
             return id;
         }
 
+        // Bumped whenever a runtime hotfix is added or changed (to re-announce them to the client).
+        public static int HotfixVersion;
+
         public static void UpdateHotfix(object obj, bool remove = false)
         {
             void DoStuff(uint recordId, DB2Hash table, Action<ByteBuffer> writer)
             {
+                System.Threading.Interlocked.Increment(ref HotfixVersion);
                 List<HotfixRecord> oldRecords = FindHotfixesByRecordIdAndTable(recordId, table, HotfixItemBegin);
                 if (oldRecords.Count == 0)
                 {

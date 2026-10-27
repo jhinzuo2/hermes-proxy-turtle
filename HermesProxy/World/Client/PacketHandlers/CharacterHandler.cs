@@ -412,9 +412,25 @@ namespace HermesProxy.World.Client
 
             PlayerCache cache;
             if (!GetSession().GameState.CachedPlayers.TryGetValue(inspect.DisplayInfo.GUID, out cache))
-                return;
+            {
+                // Players nobody looked up by name yet (most of the people around you) are not in the cache, and
+                // returning here silently dropped the inspect. Race/class/sex from the unit's own fields instead.
+                var fields = GetSession().GameState.GetCachedObjectFieldsLegacy(inspect.DisplayInfo.GUID);
+                int UNIT_FIELD_BYTES_0 = LegacyVersion.GetUpdateField(UnitField.UNIT_FIELD_BYTES_0);
+                if (fields == null || UNIT_FIELD_BYTES_0 < 0 || !fields.ContainsKey(UNIT_FIELD_BYTES_0))
+                {
+                    Framework.Logging.Log.Print(Framework.Logging.LogType.Warn, $"Inspect of {inspect.DisplayInfo.GUID}: player not known, no result sent.");
+                    return;
+                }
+                uint bytes0 = fields[UNIT_FIELD_BYTES_0].UInt32Value;
+                cache = new PlayerCache();
+                cache.Name = "";
+                cache.RaceId = (Race)(bytes0 & 0xFF);
+                cache.ClassId = (Class)((bytes0 >> 8) & 0xFF);
+                cache.SexId = (Gender)((bytes0 >> 16) & 0xFF);
+            }
 
-            inspect.DisplayInfo.Name = cache.Name;
+            inspect.DisplayInfo.Name = cache.Name ?? "";
             inspect.DisplayInfo.ClassId = cache.ClassId;
             inspect.DisplayInfo.RaceId = cache.RaceId;
             inspect.DisplayInfo.SexId = cache.SexId;
