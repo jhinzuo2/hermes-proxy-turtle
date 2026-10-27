@@ -3240,6 +3240,22 @@ namespace HermesProxy.World
             return Hotfixes.Values.Where(hotfix => hotfix.HotfixId >= startId && hotfix.TableHash == table && hotfix.RecordId == id).ToList();
         }
 
+        // Ids of hotfixes made at runtime depend on table, record and content. The client caches hotfixes by id and
+        // only fetches ids it doesn't have, so an id must never come back with other data: the old sequential ids
+        // did after every proxy restart (stale item stats, items stuck at "Retrieving item information").
+        static uint ContentHotfixId(DB2Hash table, uint recordId, ByteBuffer content)
+        {
+            uint hash = 2166136261;
+            void Mix(byte b) { hash = (hash ^ b) * 16777619; }
+            foreach (byte b in BitConverter.GetBytes((uint)table)) Mix(b);
+            foreach (byte b in BitConverter.GetBytes(recordId)) Mix(b);
+            foreach (byte b in content.GetData()) Mix(b);
+            uint id = 0x10000000 + hash % 0x60000000;
+            while (Hotfixes.ContainsKey(id))
+                id++;
+            return id;
+        }
+
         public static void UpdateHotfix(object obj, bool remove = false)
         {
             void DoStuff(uint recordId, DB2Hash table, Action<ByteBuffer> writer)
@@ -3251,10 +3267,10 @@ namespace HermesProxy.World
                     HotfixRecord record = new HotfixRecord();
                     record.Status = HotfixStatus.Valid;
                     record.TableHash = table;
-                    record.HotfixId = GetFirstFreeId(Hotfixes, HotfixItemBegin);
-                    record.UniqueId = record.HotfixId;
                     record.RecordId = recordId;
                     writer(record.HotfixContent);
+                    record.HotfixId = ContentHotfixId(table, recordId, record.HotfixContent);
+                    record.UniqueId = record.HotfixId;
                     Hotfixes.Add(record.HotfixId, record);
                 }
                 else
@@ -3270,6 +3286,10 @@ namespace HermesProxy.World
                     HotfixRecord recordToOverwrite = oldRecords.Last();
                     recordToOverwrite.HotfixContent = new();
                     writer(recordToOverwrite.HotfixContent);
+                    // new content, new id (see ContentHotfixId)
+                    Hotfixes.Remove(recordToOverwrite.HotfixId);
+                    recordToOverwrite.HotfixId = ContentHotfixId(table, recordId, recordToOverwrite.HotfixContent);
+                    recordToOverwrite.UniqueId = recordToOverwrite.HotfixId;
                     Hotfixes[recordToOverwrite.HotfixId] = recordToOverwrite;
                 }
             }
