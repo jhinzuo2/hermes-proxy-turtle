@@ -64,8 +64,35 @@ site: the client resolving a model it doesn't have.
 | Turtle stat changes on client-known items not shown (e.g. 19402 Legguards of the Fallen Crusader) | runtime hotfix ids were sequential and reused for other records after each proxy restart, so the client kept stale cached data; and live pushes for records the client already has are ignored | ids derived from table+record+content (`ContentHotfixId`); after new item hotfixes the list is announced again (`ScheduleHotfixAnnounce`, at most every 15 s) and the client fetches them |
 | Turtle enchant lines missing (head/leg/shoulder "+1..5% Haste" arcanums) | enchants 3016-3020 exist only in Turtle's SpellItemEnchantment; the 1.14 client has no record (Ravencraft added other custom enchants, not these) | `CSV/Hotfix/SpellItemEnchantment1.csv` (values from the Turtle client's DBC) sent as hotfixes in layout 2DF904D2 (WoWDBDefs, 1.14.0-1.14.3). Add more rows the same way; `[Enchant]` log lines show the ids on your own items |
 | Crash from transmog stand-ins | first item with the display could be a ring/consumable with no model | stand-ins limited to visible gear slots; items with an appearance row preferred (`BuildClientItemSnapshot`); NPC weapons use the same lookup |
+| Item stats/effects gone after a client cache wipe (e.g. The Heart of Dreams) | an item first fetched only to draw a gear slot got no Item/ItemSparse/ItemEffect records; later client DB queries were answered from that bare template | `EnsureItemRecords` before answering an Item/ItemSparse query from a cached template (logs `[EnsureItemRecords]`) |
+| Turtle stat changes missing on other players' gear (e.g. 19372 Helm of Endless Rage) | the proxy only compares an item with the client's records when it gets the item from the server, and the client never asks for an item in its own data | `CheckClientItemStats`: each client-known item seen on a player is queried once; a difference becomes a hotfix (376 items in the first session) |
+| Set bonuses missing (Turtle's alternative tier sets, custom crafted/PvP sets) or wrong | the 1.14 client knows 172 of Turtle's 359 item sets, and Turtle changed the bonuses of 92 of those (the bonus spells themselves are in Ravencraft's content) | all of Turtle's sets sent as `ItemSet`/`ItemSetSpell` hotfixes (`LoadItemSetHotfixes`, layouts 189535BF / 96588F97 from WoWDBDefs; data `CSV/Hotfix/ItemSet1.csv` + `ItemSetSpellClient1.csv` from `tools/turtle/item-sets.py`). A set's bonus rows take over the client's row ids for it, leftovers are removed |
+| Hit chance shows 0% (character sheet, ECS, any era addon) | the client reads `ActivePlayer` `UiHitModifier`/`UiSpellHitModifier`; a vanilla server has neither and never sends the hidden passive auras that give hit (Turtle's own client doesn't know it either: BetterCharacterStats scans tooltips) | `HitDisplay.cs` adds it up like the server: equip spells of our gear, set bonuses we have the pieces for, known passive spells (talents), our auras; each spell's value from Turtle's Spell.dbc (`CSV/HitSpells1.csv`, `tools/turtle/hit-spells.py`). Display only; logs `[HitDisplay]`. Not counted: spell hit for a single school (e.g. Elemental Precision), hit from enchants (scopes) |
+| Inspected players' gear has no enchants | the vanilla visible-item slot carries the permanent (sub-field 1) and temporary (2) enchant and the random property (8), but only the item id was passed on | `HandleInspectResult` adds them as `InspectEnchantData` / `RandomPropertiesID` |
+| "Transmogrified to:" line flashes on own items, missing on other players | the client's port of Turtle_TransmogUI draws it only when a tooltip opens (its 0.2 s refresh drops it) and never for others; the 1.14 client ignores item modifiers for it | addon `HermesTransmog` (see [Addons](#addons)) redraws the line on every refresh. Names: own gear from Turtle's `TransmogStatus` (asked at login with `GetTransmogStatus` on `TW_TRANSMOG`), others from their Turtle UI's answer to `INSShowTransmogs`, which the server relays as `TW_CHAT_MSG_WHISPER\t\tINSTransmogs;slot;transmog;equipped` (two tabs) and the proxy forwards. Fallback: the proxy's guess from the look. Weapons are not in Turtle's inspect answer, so they keep the guess |
+| Chat text centered until /reload | WoWTranslate's own chat fonts had no `justifyH`, so a re-applied font (login, window resize, new whisper tab) drew centered | WoWTranslate 2.5.3: every font left-justified, `SetJustifyH("LEFT")` after applying |
+
+## Addons
+
+Install into the 1.14 client's `_classic_era_\Interface\AddOns`.
+
+- **`tools/turtle/HermesTransmog`**: keeps the "Transmogrified to:" line on item tooltips (own gear and others').
+  Talks to the proxy with addon prefix `HPTM`, sent as a whisper to yourself; the proxy intercepts what the addon
+  sends and answers the same way:
+  - proxy → addon: `S|slot|equippedId|look` (own slot, the proxy's guess), `C|copyId|look` (a server-made transmog
+    copy, id ≥ 100000), `T|player|slot|transmogId|equippedId` (an inspected player's Turtle UI answer, `start` first);
+  - addon → proxy: `?` (resend after a reload), `I|player` (ask that player's Turtle UI, sent on `INSPECT_READY`).
+  Also reads Turtle's own `TW_TRANSMOG` traffic. Names come from the server's item data, so they are right even for
+  looks the client has no item for.
+- **`addon/WoWTranslate`**: live CN↔EN chat translation with the proxy's translator (`HermesProxy/Translation`, prefix
+  `WT`); plan and options in `docs/translate-plan.md`.
 
 ## Data
+
+The fork's own data: `CSV/Hotfix/ItemSet1.csv` + `ItemSetSpellClient1.csv` (Turtle's item sets, see the fixes table),
+`CSV/HitSpells1.csv` (spells that give hit), `CSV/Hotfix/SpellItemEnchantment1.csv` (Turtle-only enchants). Turtle's
+`ItemSet.dbc`/`Spell.dbc` came from the Turtle client's MPQs, last patch winning (`patch.mpq`, `patch-1`, `patch-2`,
+`patch-Q`, `patch-X`, `patch-Y` on the Capycraft client).
 
 `deploy/CSV` = stock HermesProxy CSVs plus, from Ravencraft's shipped proxy: `ClientItemAppearances1.csv`,
 the item tables (`Item*`, `ItemSparse*`, `ItemAppearance*`, `ItemModifiedAppearance*`,
@@ -82,7 +109,9 @@ weapons are missing), so "has an appearance row" is a preference, not a requirem
 3. Correlate: which `(type, display)` is created right before each crash report (within ~1 s), and which ones were
    never seen in crash-free sessions. Display 7087, 3031 (transports) and 7010/18226 (creatures) were found this way.
 4. `[ItemIcon]`, `[VisibleItem]`, `[DisplayFallback]`, `[AirSwim]` and `[SelfMove]` lines cover items, transmog,
-   creature fallbacks and flight.
+   creature fallbacks and flight. `[TransmogLine]`, `[InspectTransmog]` and `[TurtleAddon]` (Turtle addon traffic
+   both ways) cover the transmog line, `[HitDisplay]` the hit sent to the client, `[EnsureItemRecords]` item records
+   made from a cached template.
 
 ## Tools (`tools/turtle`)
 
@@ -106,11 +135,16 @@ weapons are missing), so "has an appearance row" is a preference, not a requirem
   ItemModifiedAppearance 982457, ItemDisplayInfo 1266429, CreatureDisplayInfo 1108759, CreatureModelData 1365368,
   GameObjectDisplayInfo 1266277 (model file id = column `f2`), GameObjects 841620, TransportAnimation 1140686,
   TaxiPathNode 1000437 / TaxiPath 1067802 / TaxiNodes 1068100 (Ravencraft's loose Turtle versions), ManifestInterfaceData
-  1375801 (file id → path, e.g. icon names). The table hash it
-  prints matches `DB2Hash.cs`.
+  1375801 (file id → path, e.g. icon names), ItemSet 1343609, ItemSetSpell 1314689, Spell 1140089 (`strings=0,1,2`),
+  SpellName 1990283 (`strings=1`, Ravencraft's loose version, has Turtle's spells). The table hash it
+  prints matches `DB2Hash.cs`. Compressed columns can come out wrong (ItemSetSpell's Threshold does); trust ids and
+  relations.
   ```
   dotnet run --project tools/turtle/casc -c Release -- "<client dir>" table 1108759 CreatureDisplayInfo.csv
   ```
+- `item-sets.py`, `hit-spells.py`: regenerate `ItemSet1.csv`/`ItemSetSpellClient1.csv` and `HitSpells1.csv` from
+  Turtle's `ItemSet.dbc`/`Spell.dbc` (+ the client's ItemSetSpell dump); usage in each file's header.
+- `HermesTransmog/`: the tooltip addon (see [Addons](#addons)). `boatclock/`: times transports on both clients.
 - `raven-exe/`: read Ravencraft's single-file `HermesProxy.exe`: `extract-bundle.ps1` (HermesProxy.dll +
   Framework.dll, for decompiling with ilspycmd), `extract-all.ps1` + `make-fwdep.ps1` (run it unpacked on the
   installed runtime), `inspect-il.ps1` and `patcher/` (IL patching experiments).
@@ -137,6 +171,11 @@ weapons are missing), so "has an appearance row" is a preference, not a requirem
 - **Gear looks without a stand-in** (some transmogs, 44 NPC weapons): no client item uses that display. A full
   1.14.2.42597 `ItemDisplayInfo` id list would show which displays the client has, so the proxy could create
   the appearance records itself.
+- **Transmog line for weapons on others:** Turtle's inspect answer leaves weapon slots out, so they show the proxy's
+  guess from the look (right for server-made copies, can name another item with the same look).
+- **Moving to Xian55/HermesProxy:** a port of this branch onto Xian55's actively maintained fork is on local branch
+  `capycraft-xian55` (not pushed, not tested in game, without the item set / stat check / hit / inspect enchant
+  fixes yet).
 - **Not ported from Ravencraft's proxy:** custom races (Goblin etc.: `CustomCharacterCustomizations.csv`,
   `InjectCustomRaceLanguageSkill`), character-name availability check, web credentials, re-sending own gear
   5 s after login (`ScheduleVisibleItemsRefresh`).
