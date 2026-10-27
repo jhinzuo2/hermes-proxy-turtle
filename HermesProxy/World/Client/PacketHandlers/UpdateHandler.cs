@@ -47,6 +47,91 @@ namespace HermesProxy.World.Client
             return substitute != 0 ? substitute : itemId;
         }
 
+        // "Transmogrified to:" on our own gear. Capycraft shows a transmogged slot as another item id than the one
+        // equipped; mark the equipped item with the look we draw for that slot (a client item, see
+        // ResolveVisibleItemId) so the client's own transmog tooltip line stays. Item guid -> marked appearance.
+        readonly Dictionary<WowGuid128, uint> _ownTransmogMarks = new();
+
+        // ItemModifiedAppearance to mark the item equipped in this slot with, 0 = not transmogged, null = unknown yet.
+        uint? ComputeOwnTransmogMark(int slot, uint equippedEntry)
+        {
+            var state = GetSession().GameState;
+            var player = state.GetCachedObjectFieldsLegacy(state.CurrentPlayerGuid);
+            int PLAYER_VISIBLE_ITEM_1_0 = LegacyVersion.GetUpdateField(PlayerField.PLAYER_VISIBLE_ITEM_1_0);
+            if (player == null || PLAYER_VISIBLE_ITEM_1_0 < 0 || equippedEntry == 0)
+                return null;
+            int index = PLAYER_VISIBLE_ITEM_1_0 + slot * (LegacyVersion.AddedInVersion(ClientVersionBuild.V2_0_1_6180) ? 16 : 12);
+            if (!player.ContainsKey(index))
+                return null;
+            uint visible = player[index].UInt32Value;
+            if (visible == 0)
+                return null;
+            if (visible == equippedEntry)
+                return 0;
+            uint shown = visible;
+            if (!GameData.IsItemKnownToClient(visible))
+            {
+                ItemTemplate template = GameData.GetItemTemplate(visible);
+                if (template == null)
+                    return null;
+                shown = GameData.GetClientItemIdWithDisplayId(template.DisplayID, template.InventoryType);
+                if (shown == 0)
+                    return 0;
+            }
+            var modAppearance = GameData.GetItemModifiedAppearanceByItemId(shown);
+            return modAppearance != null ? (uint)modAppearance.Id : 0;
+        }
+
+        void RefreshOwnTransmogMark(int slot)
+        {
+            var state = GetSession().GameState;
+            WowGuid64 itemGuid64 = state.GetInventorySlotItem(slot);
+            if (itemGuid64.IsEmpty())
+                return;
+            WowGuid128 itemGuid = itemGuid64.To128(state);
+            var itemFields = state.GetCachedObjectFieldsLegacy(itemGuid);
+            int OBJECT_FIELD_ENTRY = LegacyVersion.GetUpdateField(ObjectField.OBJECT_FIELD_ENTRY);
+            if (itemFields == null || !itemFields.ContainsKey(OBJECT_FIELD_ENTRY))
+                return; // not created yet: ApplyOwnTransmogMark does it on create
+            uint? mark = ComputeOwnTransmogMark(slot, itemFields[OBJECT_FIELD_ENTRY].UInt32Value);
+            if (mark == null || (_ownTransmogMarks.TryGetValue(itemGuid, out uint old) && old == mark))
+                return;
+            _ownTransmogMarks[itemGuid] = mark.Value;
+            UpdateObject updatePacket = new UpdateObject(state);
+            ObjectUpdate updateData = new ObjectUpdate(itemGuid, UpdateTypeModern.Values, GetSession());
+            updateData.ItemData.ModifiersMask = mark != 0 ? 1u : 0u;
+            updateData.ItemData.TransmogModifiedAppearanceId = mark;
+            updatePacket.ObjectUpdates.Add(updateData);
+            SendPacketToClient(updatePacket);
+        }
+
+        // On an item create/update: if it is equipped by us, set its transmog mark in the same update.
+        void ApplyOwnTransmogMark(ObjectUpdate updateData, Dictionary<int, UpdateField> updates)
+        {
+            var state = GetSession().GameState;
+            for (int slot = 0; slot < 19; slot++)
+            {
+                WowGuid64 equipped = state.GetInventorySlotItem(slot);
+                if (equipped.IsEmpty() || equipped.To128(state) != updateData.Guid)
+                    continue;
+                int OBJECT_FIELD_ENTRY = LegacyVersion.GetUpdateField(ObjectField.OBJECT_FIELD_ENTRY);
+                uint entry = updates.ContainsKey(OBJECT_FIELD_ENTRY) ? updates[OBJECT_FIELD_ENTRY].UInt32Value : 0;
+                if (entry == 0)
+                {
+                    var cached = state.GetCachedObjectFieldsLegacy(updateData.Guid);
+                    if (cached != null && cached.ContainsKey(OBJECT_FIELD_ENTRY))
+                        entry = cached[OBJECT_FIELD_ENTRY].UInt32Value;
+                }
+                uint? mark = ComputeOwnTransmogMark(slot, entry);
+                if (mark == null)
+                    return;
+                _ownTransmogMarks[updateData.Guid] = mark.Value;
+                updateData.ItemData.ModifiersMask = mark != 0 ? 1u : 0u;
+                updateData.ItemData.TransmogModifiedAppearanceId = mark;
+                return;
+            }
+        }
+
         static readonly HashSet<int> LoggedDisplayFallbacks = new();
         static readonly HashSet<int> LoggedEnchantIds = new();
 
@@ -91,6 +176,8 @@ namespace HermesProxy.World.Client
                 updateData.PlayerData.VisibleItems[pending.Slot].ItemID = (int)substitute;
                 updateData.PlayerData.VisibleItems[pending.Slot].ItemVisual = pending.ItemVisual;
                 updatePacket.ObjectUpdates.Add(updateData);
+                if (pending.Guid == state.CurrentPlayerGuid)
+                    RefreshOwnTransmogMark(pending.Slot);
             }
             if (updatePacket.ObjectUpdates.Count > 0)
                 SendPacketToClient(updatePacket);
@@ -1345,6 +1432,7 @@ namespace HermesProxy.World.Client
             if ((objectType == ObjectType.Item) ||
                 (objectType == ObjectType.Container))
             {
+                ApplyOwnTransmogMark(updateData, updates);
                 int ITEM_FIELD_OWNER = LegacyVersion.GetUpdateField(ItemField.ITEM_FIELD_OWNER);
                 if (ITEM_FIELD_OWNER >= 0 && updateMaskArray[ITEM_FIELD_OWNER])
                 {
@@ -2175,6 +2263,8 @@ namespace HermesProxy.World.Client
                                 updateData.PlayerData.VisibleItems[i].ItemVisual = (ushort)GameData.GetItemEnchantVisual(updates[enchantIdIndex].UInt32Value);
                             if (updates.ContainsKey(itemIdIndex))
                                 updateData.PlayerData.VisibleItems[i].ItemID = (int)ResolveVisibleItemId(updateData.Guid, i, updates[itemIdIndex].UInt32Value, updateData.PlayerData.VisibleItems[i].ItemVisual);
+                            if (updateData.Guid == GetSession().GameState.CurrentPlayerGuid)
+                                RefreshOwnTransmogMark(i);
                         }
                     }
                 }

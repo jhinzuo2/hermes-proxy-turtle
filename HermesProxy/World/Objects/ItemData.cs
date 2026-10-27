@@ -36,5 +36,8 @@ namespace HermesProxy.World.Objects
 
         // Dynamic Fields
         public bool HasGemsUpdate;
+        // ItemModifiedAppearance the item is transmogrified to (modifier TransmogAppearanceAllSpecs, the only one
+        // we set, so it is the single value of ITEM_DYNAMIC_FIELD_MODIFIERS). 0 = clear.
+        public uint? TransmogModifiedAppearanceId;
     }
 }

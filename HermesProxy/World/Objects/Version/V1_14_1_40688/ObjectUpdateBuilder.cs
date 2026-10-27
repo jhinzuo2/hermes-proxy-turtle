@@ -1,4 +1,4 @@
-﻿using Framework.GameMath;
+using Framework.GameMath;
 using Framework.IO;
 using HermesProxy.World.Enums.V1_14_1_40688;
 using HermesProxy.World.Server.Packets;
@@ -750,6 +750,8 @@ namespace HermesProxy.World.Objects.Version.V1_14_1_40688
                     m_fields.SetUpdateField<ulong>(ItemField.ITEM_FIELD_ARTIFACT_XP, (ulong)itemData.ArtifactXP);
                 if (itemData.ItemAppearanceModID != null)
                     m_fields.SetUpdateField<uint>(ItemField.ITEM_FIELD_APPEARANCE_MOD_ID, (uint)itemData.ItemAppearanceModID);
+                if (itemData.TransmogModifiedAppearanceId != null)
+                    m_dynamicFields.SetUpdateField((int)ItemDynamicField.ITEM_DYNAMIC_FIELD_MODIFIERS, itemData.TransmogModifiedAppearanceId.Value != 0 ? new uint[] { itemData.TransmogModifiedAppearanceId.Value } : new uint[0], DynamicFieldChangeType.ValueAndSizeChanged);
 
                 // Dynamic Fields
                 if (itemData.HasGemsUpdate)
