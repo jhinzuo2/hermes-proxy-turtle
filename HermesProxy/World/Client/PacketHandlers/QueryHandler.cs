@@ -502,6 +502,9 @@ namespace HermesProxy.World.Client
             bool onlyForVisibleItem = state.RequestedVisibleItemQueries.Contains((uint)entry.Key) &&
                                       !state.RequestedItemHotfixes.Contains((uint)entry.Key) &&
                                       !state.RequestedItemSparseHotfixes.Contains((uint)entry.Key);
+            // Diagnostic: what the server's gear-only ids (Capycraft transmog) are, e.g. for inspect.
+            if (state.RequestedVisibleItemQueries.Contains((uint)entry.Key))
+                Log.Print(LogType.Storage, $"[VisibleItemTemplate] #{item.Entry} \"{item.Name[0]}\" class {item.Class}/{item.SubClass} inv {item.InventoryType} quality {item.Quality} display {item.DisplayID} ilvl {item.ItemLevel} reqLvl {item.RequiredLevel} armor {item.Armor}");
             if (!onlyForVisibleItem)
                 SendItemUpdatesIfNeeded(item);
             GameData.StoreItemTemplate((uint)entry.Key, item);
