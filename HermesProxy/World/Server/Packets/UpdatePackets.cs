@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (C) 2012-2020 CypherCore <http://github.com/CypherCore>
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -148,6 +148,15 @@ namespace HermesProxy.World.Server.Packets
                     uint period = GameData.GetTransportPeriod((uint)ObjectData.EntryID);
                     if (period == 0)
                         period = 300000;
+                    // Turtle sends some map-crossing ships at (0,0,0); the 1.14 client then never shows them.
+                    if (CreateData.MoveInfo.Position.X == 0 && CreateData.MoveInfo.Position.Y == 0 && CreateData.MoveInfo.Position.Z == 0)
+                    {
+                        var dock = GameData.GetTransportDockPosition((uint)ObjectData.EntryID, (uint)(GlobalSession.GameState.CurrentMapId ?? 0));
+                        if (dock != null)
+                            CreateData.MoveInfo.Position = dock.Value;
+                    }
+                    if (Framework.Settings.LogCreatureCreates)
+                        Framework.Logging.Log.Print(Framework.Logging.LogType.Server, $"[TransportCreate] entry={ObjectData.EntryID} pos={CreateData.MoveInfo.Position} timer={CreateData.MoveInfo.TransportPathTimer} period={period}");
                     if (GameObjectData.Level == null)
                         GameObjectData.Level = (int)period;
                     if (ObjectData.DynamicFlags == null)
