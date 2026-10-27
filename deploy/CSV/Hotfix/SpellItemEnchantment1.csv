@@ -1,0 +1,6 @@
+ID,Name,Effect1,Effect2,Effect3,EffectPointsMin1,EffectPointsMin2,EffectPointsMin3,EffectArg1,EffectArg2,EffectArg3,ItemVisual,Flags
+3016,"+1% Haste",3,0,0,0,0,0,13679,0,0,0,0
+3017,"+2% Haste",3,0,0,0,0,0,8815,0,0,0,0
+3018,"+3% Haste",3,0,0,0,0,0,13680,0,0,0,0
+3019,"+4% Haste",3,0,0,0,0,0,13681,0,0,0,0
+3020,"+5% Haste",3,0,0,0,0,0,13682,0,0,0,0

@@ -1777,6 +1777,7 @@ namespace HermesProxy.World
         public const uint HotfixCreatureDisplayInfoBegin = 270000;
         public const uint HotfixCreatureDisplayInfoExtraBegin = 280000;
         public const uint HotfixCreatureDisplayInfoOptionBegin = 290000;
+        public const uint HotfixSpellItemEnchantmentBegin = 300000;
         public static Dictionary<uint, HotfixRecord> Hotfixes = new Dictionary<uint, HotfixRecord>();
         public static void LoadHotfixes()
         {
@@ -1798,6 +1799,7 @@ namespace HermesProxy.World
             LoadCreatureDisplayInfoHotfixes();
             LoadCreatureDisplayInfoExtraHotfixes();
             LoadCreatureDisplayInfoOptionHotfixes();
+            LoadSpellItemEnchantmentHotfixes();
         }
         
         public static void LoadAreaTriggerHotfixes()
@@ -4354,6 +4356,63 @@ namespace HermesProxy.World
                     record.HotfixContent.WriteInt32(chrCustomizationOptionId);
                     record.HotfixContent.WriteInt32(chrCustomizationChoiceId);
                     record.HotfixContent.WriteInt32(creatureDisplayInfoExtraId);
+                    Hotfixes.Add(record.HotfixId, record);
+                }
+            }
+        }
+        // Enchants the client has no record for (Turtle's +1..5% Haste arcanums 3016-3020): without one the tooltip
+        // line is missing. Layout of 1.14.0-1.14.3 / 2.5.x (WoWDBDefs layout 2DF904D2). Optional file.
+        public static void LoadSpellItemEnchantmentHotfixes()
+        {
+            var path = Path.Combine("CSV", "Hotfix", $"SpellItemEnchantment{ModernVersion.ExpansionVersion}.csv");
+            if (!File.Exists(path))
+                return;
+            using (TextFieldParser csvParser = new TextFieldParser(path))
+            {
+                csvParser.CommentTokens = new string[] { "#" };
+                csvParser.SetDelimiters(new string[] { "," });
+                csvParser.HasFieldsEnclosedInQuotes = true;
+
+                // ID,Name,Effect1,Effect2,Effect3,EffectPointsMin1,EffectPointsMin2,EffectPointsMin3,EffectArg1,EffectArg2,EffectArg3,ItemVisual,Flags
+                csvParser.ReadLine();
+
+                uint counter = 0;
+                while (!csvParser.EndOfData)
+                {
+                    counter++;
+                    string[] fields = csvParser.ReadFields();
+
+                    HotfixRecord record = new HotfixRecord();
+                    record.Status = HotfixStatus.Valid;
+                    record.TableHash = DB2Hash.SpellItemEnchantment;
+                    record.HotfixId = HotfixSpellItemEnchantmentBegin + counter;
+                    record.UniqueId = record.HotfixId;
+                    record.RecordId = uint.Parse(fields[0]);
+                    var c = record.HotfixContent;
+                    c.WriteCString(fields[1]);                  // Name_lang
+                    c.WriteCString(fields[1]);                  // HordeName_lang
+                    for (int i = 0; i < 3; i++)
+                        c.WriteUInt32(uint.Parse(fields[8 + i])); // EffectArg
+                    for (int i = 0; i < 3; i++)
+                        c.WriteFloat(0);                        // EffectScalingPoints
+                    c.WriteUInt32(0);                           // TransmogUnlockConditionID
+                    c.WriteUInt32(0);                           // TransmogCost
+                    c.WriteUInt32(0);                           // IconFileDataID
+                    for (int i = 0; i < 3; i++)
+                        c.WriteInt16(short.Parse(fields[5 + i])); // EffectPointsMin
+                    c.WriteUInt16(ushort.Parse(fields[11]));    // ItemVisual
+                    c.WriteUInt16(ushort.Parse(fields[12]));    // Flags
+                    c.WriteUInt16(0);                           // RequiredSkillID
+                    c.WriteUInt16(0);                           // RequiredSkillRank
+                    c.WriteUInt16(0);                           // ItemLevel
+                    c.WriteUInt8(0);                            // Charges
+                    for (int i = 0; i < 3; i++)
+                        c.WriteUInt8(byte.Parse(fields[2 + i])); // Effect
+                    c.WriteInt8(0);                             // ScalingClass
+                    c.WriteInt8(0);                             // ScalingClassRestricted
+                    c.WriteUInt8(0);                            // Condition_ID
+                    c.WriteUInt8(0);                            // MinLevel
+                    c.WriteUInt8(0);                            // MaxLevel
                     Hotfixes.Add(record.HotfixId, record);
                 }
             }
