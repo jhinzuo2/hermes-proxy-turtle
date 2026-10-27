@@ -46,6 +46,7 @@ class Wdc3
             for (int a = 0; a < arrayLen[f]; a++) Columns.Add(arrayLen[f] > 1 ? $"f{f}_{a}" : $"f{f}");
         }
         if ((flags & 1) != 0) throw new NotSupportedException("sparse (offset map) tables not handled");
+        if (sections.Any(s => s[5] > 0)) Columns.Add("rel");   // relationship map (foreign key, e.g. TransportAnimation.TransportID)
 
         foreach (var s in sections)
         {
@@ -90,6 +91,15 @@ class Wdc3
                     if (info[f].type == 2 && common[f].TryGetValue((int)row[0], out int cv)) row[c] = cv;
                 sectionRows.Add(row);
                 if (text.Any(t => t != null)) Texts[row] = text;
+            }
+            if (relSize > 0)
+            {
+                int relStart = copyStart + copyCount * 8, relCount = I(b, relStart);
+                for (int k = 0; k < relCount; k++)
+                {
+                    int foreign = I(b, relStart + 12 + k * 8), recIndex = I(b, relStart + 16 + k * 8);
+                    if (recIndex < count) sectionRows[recIndex][Columns.Count - 1] = (uint)foreign;
+                }
             }
             var byId = sectionRows.GroupBy(r => r[0]).ToDictionary(g => g.Key, g => g.First());
             for (int k = 0; k < copyCount; k++)

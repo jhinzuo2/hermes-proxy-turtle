@@ -56,7 +56,7 @@ site: the client resolving a model it doesn't have.
 | Stuck on the Caverns of Time drake | Turtle "air swim": server echoes our own movement with Swimming set; the 1.14 client can't swim in air | `AirSwimAsFlight` (SMSG_MOVE_SET_CAN_FLY on first echo, unset on dismount / non-swim echo / new world) |
 | Transmogged gear invisible in the world | Capycraft sends transmogged slots as server-only item ids | `ResolveUnknownVisibleItems`: query the template, show a client item with the same display, re-send the slot. Queries made only for this push nothing to the client (pushing their appearance records crashed it). |
 | "?" icons on Turtle items | the proxy's display → icon table only knows Blizzard displays | `deploy/CSV/ItemDisplayIdToFileDataId1.csv` + rows from the Turtle client's `ItemDisplayInfo.dbc` (icon name → 1.14 icon via `tools/turtle/client-dbc`). Checked 2026-10-26 against the 1.14 client itself (`tools/turtle/casc`): 69 rows fixed to the icon with the exact name (the majority vote had picked another), 1,436 dropped because their icon file (mostly TBC art) is not in the client, 5 added; 9,402 Turtle rows remain |
-| Invisible boats (e.g. Stormwind–Auberdine, Turtle transport 181646) | display 7087 (all boats) was still in `DropGameObjectDisplays` from crash hunting before the transport fix | removed from the config 2026-10-26; under test |
+| Invisible boats (e.g. Stormwind–Auberdine, Turtle transport 181646) | display 7087 (all boats) was still in `DropGameObjectDisplays` from crash hunting before the transport fix | removed from the config 2026-10-26, but the Stormwind ship is still invisible: its model (WMO 116322) is in the client, yet its route (TaxiPath 967, GameObject data0) is in neither the 1.14 client nor the Turtle client's DBCs, only server-side; the 1.14 client can't place a transport without its path. Same for Turtle routes 1221 (Orgrimmar–Thunder Bluff) and 1636 (Windrunner). Open |
 | Custom flight paths listed but clicking does nothing | the proxy routes a flight itself (direct path or shortest path over `TaxiPath/TaxiNodes/TaxiPathNode1.csv`) and silently gave up when it found none; those CSVs were stock (85 nodes), Turtle has 122 (custom 82, 83, 88–123) and 360 paths | `deploy/CSV` taxi tables from the Turtle client's DBCs (patch-9.mpq, `extract-dbc.ps1 -Files DBFilesClient\TaxiNodes.dbc,...`); placeholder paths (0 → 0) skipped; an unknown route now logs `No taxi route from node X to Y` |
 | Crash from transmog stand-ins | first item with the display could be a ring/consumable with no model | stand-ins limited to visible gear slots; items with an appearance row preferred (`BuildClientItemSnapshot`); NPC weapons use the same lookup |
 
@@ -97,9 +97,11 @@ weapons are missing), so "has an appearance row" is a preference, not a requirem
 - `casc/`: reads the 1.14.2 client's own data (CASC: local `Data/data` archives plus the launcher's loose files under
   `cdn/`, which hold Ravencraft's custom content), no CascLib needed. `table <fdid> <out.csv>` dumps a DB2 (WDC3,
   integer columns, strings where they point into the string table), `file`, `ids` (every file id the client has),
-  `loose`, and `dbc <file.dbc> <out.csv>` for 1.12 DBCs. Useful file ids: Item 841626, ItemAppearance 982462,
+  `loose`, `find <hash,hash> [from] [to]` (file ids of the DB2s with those table hashes), and `dbc <file.dbc> <out.csv>`  for 1.12 DBCs. Foreign keys from the relationship map come out as the last column `rel`. Useful file ids: Item 841626, ItemAppearance 982462,
   ItemModifiedAppearance 982457, ItemDisplayInfo 1266429, CreatureDisplayInfo 1108759, CreatureModelData 1365368,
-  GameObjectDisplayInfo 1266277, ManifestInterfaceData 1375801 (file id → path, e.g. icon names). The table hash it
+  GameObjectDisplayInfo 1266277 (model file id = column `f2`), GameObjects 841620, TransportAnimation 1140686,
+  TaxiPathNode 1000437 / TaxiPath 1067802 / TaxiNodes 1068100 (Ravencraft's loose Turtle versions), ManifestInterfaceData
+  1375801 (file id → path, e.g. icon names). The table hash it
   prints matches `DB2Hash.cs`.
   ```
   dotnet run --project tools/turtle/casc -c Release -- "<client dir>" table 1108759 CreatureDisplayInfo.csv

@@ -47,5 +47,19 @@ switch (args[1])
     case "loose":
         foreach (var id in casc.FileIds.Where(casc.IsLoose).OrderBy(i => i)) Console.WriteLine(id);
         break;
+    case "find":
+    {
+        // file ids of DB2 tables with the given table hashes (hex, as in DB2Hash.cs); optional id range
+        var want = args[2].Split(',').Select(h => Convert.ToUInt32(h.Replace("0x", ""), 16)).ToHashSet();
+        uint lo = args.Length > 3 ? uint.Parse(args[3]) : 0, hi = args.Length > 4 ? uint.Parse(args[4]) : uint.MaxValue;
+        foreach (var id in casc.FileIds.Where(i => i >= lo && i <= hi).OrderBy(i => i))
+        {
+            byte[] d;
+            try { d = casc.ReadFile(id); } catch { continue; }
+            if (d != null && d.Length > 24 && BitConverter.ToUInt32(d, 0) == 0x33434457 && want.Contains(BitConverter.ToUInt32(d, 20)))
+                Console.WriteLine($"{id} 0x{BitConverter.ToUInt32(d, 20):X8}");
+        }
+        break;
+    }
 }
 return 0;
