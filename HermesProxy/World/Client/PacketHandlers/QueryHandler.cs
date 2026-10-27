@@ -573,6 +573,24 @@ namespace HermesProxy.World.Client
             }
         }
 
+        // For client DB queries answered from a cached template. The template may have been cached while only
+        // drawing a gear slot (no records made then); without this the item lost its stats and equip lines
+        // whenever another player wore it before the client asked for it (e.g. after clearing the cache).
+        public void EnsureItemRecords(ItemTemplate item)
+        {
+            lock (_itemRecordsEnsured)
+                if (!_itemRecordsEnsured.Add(item.Entry))
+                    return;
+            int hotfixVersion = GameData.HotfixVersion;
+            SendItemUpdatesIfNeeded(item);
+            if (GameData.HotfixVersion != hotfixVersion)
+            {
+                Log.Print(LogType.Storage, $"[EnsureItemRecords] #{item.Entry} \"{item.Name[0]}\": records made from the cached template");
+                ScheduleHotfixAnnounce();
+            }
+        }
+        readonly HashSet<uint> _itemRecordsEnsured = new();
+
         void SendItemUpdatesIfNeeded(ItemTemplate item)
         {
             Server.Packets.HotFixMessage? reply;

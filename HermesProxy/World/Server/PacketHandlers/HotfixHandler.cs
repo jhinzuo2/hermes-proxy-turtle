@@ -59,6 +59,7 @@ namespace HermesProxy.World.Server
                     ItemTemplate item = GameData.GetItemTemplate(id);
                     if (item != null)
                     {
+                        GetSession().WorldClient?.EnsureItemRecords(item);
                         //Log.PrintNet(LogType.Debug, LogNetDir.P2C, $"Sending custom ({DB2Hash.Item}) #{id}");
                         reply.Status = HotfixStatus.Valid;
                         GameData.WriteItemHotfix(item, reply.Data);
@@ -83,6 +84,7 @@ namespace HermesProxy.World.Server
                     ItemTemplate item = GameData.GetItemTemplate(id);
                     if (item != null)
                     {
+                        GetSession().WorldClient?.EnsureItemRecords(item);
                         //Log.PrintNet(LogType.Debug, LogNetDir.P2C, $"Sending custom ({DB2Hash.ItemSparse}) #{id}");
                         reply.Status = HotfixStatus.Valid;
                         GameData.WriteItemSparseHotfix(item, reply.Data);
