@@ -511,6 +511,18 @@ namespace HermesProxy.World.Client
                                 uint transmog = InspectTransmogMark(itemId);
                                 if (transmog != 0)
                                     itemData.Item.Modifications.Values.Add(new ItemMod(transmog, ItemModifier.TransmogAppearanceAllSpecs));
+                                // The visible slot also has the item's enchants (f1 permanent, f2 temporary) and random
+                                // property (f8, vanilla); without them inspected gear showed no enchants.
+                                if (offset == 12)
+                                {
+                                    int slotBase = PLAYER_VISIBLE_ITEM_1_0 + i * offset;
+                                    uint SubField(int f) => updates.TryGetValue(slotBase + f, out var v) ? v.UInt32Value : 0;
+                                    if (SubField(1) != 0)
+                                        itemData.Enchants.Add(new InspectEnchantData(SubField(1), (byte)Enums.Classic.EnchantmentSlot.Perm));
+                                    if (SubField(2) != 0)
+                                        itemData.Enchants.Add(new InspectEnchantData(SubField(2), (byte)Enums.Classic.EnchantmentSlot.Temp));
+                                    itemData.Item.RandomPropertiesID = SubField(8);
+                                }
                                 inspect.DisplayInfo.Items.Add(itemData);
                             }
                         }
