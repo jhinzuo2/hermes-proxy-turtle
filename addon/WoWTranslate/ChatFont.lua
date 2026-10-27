@@ -25,6 +25,7 @@ local function Apply(frame)
     else
         frame:SetFont(FONT, size, "")
     end
+    frame:SetJustifyH("LEFT") -- else the chat may come out centered until a /reload
 end
 
 function WT.ApplyChatFonts()
