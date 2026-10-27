@@ -82,6 +82,93 @@ namespace HermesProxy.World.Client
             return modAppearance != null ? (uint)modAppearance.Id : 0;
         }
 
+        // The client draws its own "Transmogrified to:" line only on the first frame of a tooltip (its 0.2 s
+        // refresh drops it), from the slot's visible item, and never for inspected players. The HermesTransmog
+        // addon draws it instead, from what we tell it over addon messages (prefix HPTM, a whisper from
+        // ourselves like the translator's):
+        //   S|slot|equippedItemId|look name   our own slot (equippedItemId 0 = not transmogged)
+        //   C|copyItemId|look name            a transmog copy (other players' gear, see InspectTransmogMark)
+        // An empty look name = transmogged to a look this client has no item for.
+        public const string TransmogAddonPrefix = "HPTM";
+        readonly Dictionary<int, string> _sentTransmogLines = new();
+
+        public void SendTransmogAddonMessage(string text)
+        {
+            var state = GetSession().GameState;
+            var self = state.CurrentPlayerGuid;
+            if (self == null)
+                return;
+            string selfName = state.GetPlayerName(self);
+            var chat = new ChatPkt(GetSession(), ChatMessageTypeModern.Whisper, text, (uint)Language.AddonBfA,
+                self, selfName, self, selfName, "", ChatFlags.None, TransmogAddonPrefix);
+            HermesProxy.Translation.TranslationSession.SendToClient(GetSession(), chat);
+        }
+
+        // The look name of our own slot, "" = unknown look, null = not transmogged or not known yet.
+        string OwnTransmogLookName(int slot, uint equippedEntry, out bool known)
+        {
+            known = false;
+            var state = GetSession().GameState;
+            var player = state.GetCachedObjectFieldsLegacy(state.CurrentPlayerGuid);
+            int PLAYER_VISIBLE_ITEM_1_0 = LegacyVersion.GetUpdateField(PlayerField.PLAYER_VISIBLE_ITEM_1_0);
+            if (player == null || PLAYER_VISIBLE_ITEM_1_0 < 0 || equippedEntry == 0)
+                return null;
+            int index = PLAYER_VISIBLE_ITEM_1_0 + slot * (LegacyVersion.AddedInVersion(ClientVersionBuild.V2_0_1_6180) ? 16 : 12);
+            if (!player.ContainsKey(index) || player[index].UInt32Value == 0)
+                return null;
+            uint visible = player[index].UInt32Value;
+            known = true;
+            if (visible == equippedEntry)
+                return null;
+            uint shown = visible;
+            if (!GameData.IsItemKnownToClient(visible))
+            {
+                ItemTemplate template = GameData.GetItemTemplate(visible);
+                if (template == null)
+                {
+                    known = false;
+                    return null;
+                }
+                shown = GameData.GetClientItemIdWithDisplayId(template.DisplayID, template.InventoryType);
+                if (shown == 0)
+                    return "";
+            }
+            string name = GameData.GetClientItemName(shown);
+            return name == GameData.GetClientItemName(equippedEntry) ? null : name;
+        }
+
+        void SendOwnTransmogLine(int slot, uint equippedEntry, bool force = false)
+        {
+            string name = OwnTransmogLookName(slot, equippedEntry, out bool known);
+            if (!known)
+                return;
+            string text = name == null ? $"S|{slot}|0|" : $"S|{slot}|{equippedEntry}|{name}";
+            lock (_sentTransmogLines)
+            {
+                if (!force && _sentTransmogLines.TryGetValue(slot, out string old) && old == text)
+                    return;
+                _sentTransmogLines[slot] = text;
+            }
+            Log.Print(LogType.Storage, $"[TransmogLine] {text}");
+            SendTransmogAddonMessage(text);
+        }
+
+        // The addon asks on login/reload (it missed what was sent before it loaded).
+        public void ResendOwnTransmogLines()
+        {
+            var state = GetSession().GameState;
+            int OBJECT_FIELD_ENTRY = LegacyVersion.GetUpdateField(ObjectField.OBJECT_FIELD_ENTRY);
+            for (int slot = 0; slot < 19; slot++)
+            {
+                WowGuid64 itemGuid = state.GetInventorySlotItem(slot);
+                if (itemGuid.IsEmpty())
+                    continue;
+                var itemFields = state.GetCachedObjectFieldsLegacy(itemGuid.To128(state));
+                if (itemFields != null && itemFields.ContainsKey(OBJECT_FIELD_ENTRY))
+                    SendOwnTransmogLine(slot, itemFields[OBJECT_FIELD_ENTRY].UInt32Value, true);
+            }
+        }
+
         void RefreshOwnTransmogMark(int slot)
         {
             var state = GetSession().GameState;
@@ -93,6 +180,7 @@ namespace HermesProxy.World.Client
             int OBJECT_FIELD_ENTRY = LegacyVersion.GetUpdateField(ObjectField.OBJECT_FIELD_ENTRY);
             if (itemFields == null || !itemFields.ContainsKey(OBJECT_FIELD_ENTRY))
                 return; // not created yet: ApplyOwnTransmogMark does it on create
+            SendOwnTransmogLine(slot, itemFields[OBJECT_FIELD_ENTRY].UInt32Value);
             uint? mark = ComputeOwnTransmogMark(slot, itemFields[OBJECT_FIELD_ENTRY].UInt32Value);
             Log.Print(LogType.Storage, $"[TransmogMark] slot {slot} item {itemFields[OBJECT_FIELD_ENTRY].UInt32Value} -> {(mark == null ? "unknown" : mark.ToString())} (refresh)");
             if (mark == null || (_ownTransmogMarks.TryGetValue(itemGuid, out uint old) && old == mark))
@@ -123,6 +211,7 @@ namespace HermesProxy.World.Client
                     if (cached != null && cached.ContainsKey(OBJECT_FIELD_ENTRY))
                         entry = cached[OBJECT_FIELD_ENTRY].UInt32Value;
                 }
+                SendOwnTransmogLine(slot, entry);
                 uint? mark = ComputeOwnTransmogMark(slot, entry);
                 Log.Print(LogType.Storage, $"[TransmogMark] slot {slot} item {entry} -> {(mark == null ? "unknown" : mark.ToString())} (create)");
                 if (mark == null)
@@ -165,7 +254,12 @@ namespace HermesProxy.World.Client
             uint substitute = template != null ? GameData.GetClientItemIdWithDisplayId(template.DisplayID, template.InventoryType) : 0;
             Log.Print(LogType.Storage, $"[VisibleItem] #{itemId} display {(template != null ? template.DisplayID.ToString() : "unknown")} -> client item #{substitute} ({slots.Count} slot(s))");
             if (substitute == 0)
+            {
+                foreach (var pending in slots)
+                    if (pending.Guid == state.CurrentPlayerGuid)
+                        RefreshOwnTransmogMark(pending.Slot); // still tell the addon the slot is transmogged
                 return;
+            }
 
             UpdateObject updatePacket = new UpdateObject(state);
             foreach (var pending in slots)

@@ -1,0 +1,4 @@
+## Interface: 11402
+## Title: HermesTransmog
+## Notes: Keeps the "Transmogrified to:" tooltip line on your own and inspected gear (needs the Capycraft HermesProxy)
+HermesTransmog.lua

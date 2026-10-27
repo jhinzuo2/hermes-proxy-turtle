@@ -1,4 +1,4 @@
-﻿using Framework.Logging;
+using Framework.Logging;
 using HermesProxy.Enums;
 using HermesProxy.World.Enums;
 using HermesProxy.World.Server.Packets;
@@ -229,9 +229,25 @@ namespace HermesProxy.World.Server
             }
         }
 
+        // HermesTransmog addon asking for the transmog lines again (after a login or /reload); never sent to the server.
+        bool HandleTransmogAddonMessage(string prefix, string text)
+        {
+            if (prefix != World.Client.WorldClient.TransmogAddonPrefix)
+                return false;
+            var client = GetSession().WorldClient;
+            if (text == "?" && client != null)
+            {
+                client.ForgetSentTransmogCopies();
+                client.ResendOwnTransmogLines();
+            }
+            return true;
+        }
+
         [PacketHandler(Opcode.CMSG_CHAT_ADDON_MESSAGE)]
         void HandleAddonMessage(ChatAddonMessage packet)
         {
+            if (HandleTransmogAddonMessage(packet.Params.Prefix, packet.Params.Text))
+                return;
             // WoWTranslate addon talking to the proxy: answered here, never sent to the server.
             if (Translation.TranslationService.IsEnabled && GetSession().ChatTranslation.HandleAddonMessage(packet.Params.Prefix, packet.Params.Text))
                 return;
@@ -254,6 +270,8 @@ namespace HermesProxy.World.Server
         [PacketHandler(Opcode.CMSG_CHAT_ADDON_MESSAGE_TARGETED)]
         void HandleAddonMessageTargeted(ChatAddonMessageTargeted packet)
         {
+            if (HandleTransmogAddonMessage(packet.Params.Prefix, packet.Params.Text))
+                return;
             if (Translation.TranslationService.IsEnabled && GetSession().ChatTranslation.HandleAddonMessage(packet.Params.Prefix, packet.Params.Text))
                 return;
 

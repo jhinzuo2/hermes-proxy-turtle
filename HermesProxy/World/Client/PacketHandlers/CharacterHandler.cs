@@ -415,6 +415,13 @@ namespace HermesProxy.World.Client
         // (id 100000 and up, the real item's name and stats, the look's display); the real ids are below that.
         // Mark it with the client item we draw for that look (see ResolveVisibleItemId), unless that is the
         // same item. Returns the ItemModifiedAppearance id, 0 = no mark.
+        readonly HashSet<uint> _sentTransmogCopies = new();
+        public void ForgetSentTransmogCopies()
+        {
+            lock (_sentTransmogCopies)
+                _sentTransmogCopies.Clear();
+        }
+
         uint InspectTransmogMark(uint itemId)
         {
             const uint FirstTransmogCopyId = 100000;
@@ -426,6 +433,9 @@ namespace HermesProxy.World.Client
             uint shown = GameData.GetClientItemIdWithDisplayId(template.DisplayID, template.InventoryType);
             if (shown == 0 || GameData.GetClientItemName(shown) == template.Name[0])
                 return 0;
+            lock (_sentTransmogCopies)
+                if (_sentTransmogCopies.Add(itemId))
+                    SendTransmogAddonMessage($"C|{itemId}|{GameData.GetClientItemName(shown)}");
             var modAppearance = GameData.GetItemModifiedAppearanceByItemId(shown);
             uint mark = modAppearance != null ? (uint)modAppearance.Id : 0;
             Framework.Logging.Log.Print(Framework.Logging.LogType.Storage, $"[InspectTransmog] #{itemId} \"{template.Name[0]}\" display {template.DisplayID} -> client item #{shown} \"{GameData.GetClientItemName(shown)}\" mark {mark}");
