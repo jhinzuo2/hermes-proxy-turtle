@@ -290,6 +290,16 @@ namespace HermesProxy.World
             return null;
         }
 
+        // Ids for records we create (ItemEffect, ItemAppearance, ItemModifiedAppearance) must be the same in every
+        // proxy run: the client caches them, and "next free id" handed the same id to another item after a restart
+        // (an item's Equip lines vanished, e.g. 61194). Derived from the item/display, above all client ids.
+        public static uint StableId(System.Collections.IDictionary dict, uint preferred)
+        {
+            while (dict.Contains(preferred))
+                preferred++;
+            return preferred;
+        }
+
         public static uint GetFirstFreeId(System.Collections.IDictionary dict, uint after = 0)
         {
             uint firstEntry = 0;
@@ -4051,7 +4061,7 @@ namespace HermesProxy.World
         public static ItemEffect AddItemEffectRecord(ItemTemplate item, byte slot)
         {
             ItemEffect record = new();
-            record.Id = (int)GetFirstFreeId(ItemEffectStore);
+            record.Id = (int)StableId(ItemEffectStore, 2000000 + item.Entry * 5 + slot);
             record.LegacySlotIndex = slot;
             UpdateItemEffectRecord(record, item);
             ItemEffectStore.Add((uint)record.Id, record);
@@ -4087,7 +4097,7 @@ namespace HermesProxy.World
         public static ItemAppearance AddItemAppearanceRecord(ItemTemplate item)
         {
             ItemAppearance record = new();
-            record.Id = (int)GetFirstFreeId(ItemAppearanceStore);
+            record.Id = (int)StableId(ItemAppearanceStore, 4000000 + item.DisplayID);
             UpdateItemAppearanceRecord(record, item);
             ItemAppearanceStore.Add((uint)record.Id, record);
             Log.Print(LogType.Storage, $"ItemAppearance #{record.Id} created for DisplayID #{item.DisplayID}.");
@@ -4113,7 +4123,7 @@ namespace HermesProxy.World
         public static ItemModifiedAppearance AddItemModifiedAppearanceRecord(ItemTemplate item)
         {
             ItemModifiedAppearance record = new();
-            record.Id = (int)GetFirstFreeId(ItemModifiedAppearanceStore);
+            record.Id = (int)StableId(ItemModifiedAppearanceStore, 6000000 + item.Entry);
             UpdateItemModifiedAppearanceRecord(record, item);
             if (record.ItemID != item.Entry)
             {
