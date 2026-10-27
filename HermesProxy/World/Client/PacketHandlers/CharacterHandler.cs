@@ -370,6 +370,34 @@ namespace HermesProxy.World.Client
             SendPacketToClient(updatePacket);
         }
 
+        // Server-only gear ids (Capycraft's own items, e.g. the alternative tier set variants, and transmog
+        // copies) have no records on the client, so the inspect frame shows nothing for them. Send just their
+        // Item/ItemSparse rows (name, icon, stats); never appearance records, those crashed the client.
+        void SendInspectItemRecords(uint itemId)
+        {
+            if (GameData.IsItemKnownToClient(itemId))
+                return;
+            ItemTemplate template = GameData.GetItemTemplate(itemId);
+            if (template == null)
+                return;
+
+            var item = GameData.GenerateItemUpdateIfNeeded(template);
+            if (item != null)
+                SendPacketToClient(item);
+            var sparse = GameData.GenerateItemSparseUpdateIfNeeded(template);
+            if (sparse != null)
+            {
+                SendPacketToClient(sparse);
+                DBReply reply = new();
+                reply.Status = HotfixStatus.Valid;
+                reply.Timestamp = (uint)Time.UnixTime;
+                reply.RecordID = sparse.Hotfixes[0].RecordId;
+                reply.TableHash = sparse.Hotfixes[0].TableHash;
+                reply.Data = sparse.Hotfixes[0].HotfixContent;
+                SendPacketToClient(reply);
+            }
+        }
+
         [PacketHandler(Opcode.SMSG_INSPECT_RESULT)]
         [PacketHandler(Opcode.SMSG_INSPECT_TALENT)]
         void HandleInspectResult(WorldPacket packet)
@@ -403,6 +431,7 @@ namespace HermesProxy.World.Client
                             uint itemId = updates[PLAYER_VISIBLE_ITEM_1_0 + i * offset].UInt32Value;
                             if (itemId != 0)
                             {
+                                SendInspectItemRecords(itemId);
                                 InspectItemData itemData = new InspectItemData();
                                 itemData.Index = i;
                                 itemData.Item.ItemID = itemId;

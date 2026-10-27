@@ -28,7 +28,9 @@ switch (args[1])
     case "table":
     {
         var data = casc.ReadFile(uint.Parse(args[2])) ?? throw new FileNotFoundException(args[2]);
-        var t = new Wdc3(data);
+        // sparse tables: 5th arg "strings=1,2,3" names the inline string fields (ItemSparse: strings=1,2,3,4,5)
+        var strings = args.Length > 4 && args[4].StartsWith("strings=") ? args[4][8..].Split(',').Select(int.Parse).ToHashSet() : null;
+        var t = new Wdc3(data, strings);
         Console.WriteLine($"{args[2]}: table 0x{t.TableHash:X8} layout 0x{t.LayoutHash:X8}, {t.Rows.Count} rows, {t.Columns.Count} columns, loose={casc.IsLoose(uint.Parse(args[2]))}");
         using var w = new StreamWriter(args[3]);
         w.WriteLine(string.Join(",", t.Columns));

@@ -7,7 +7,7 @@ class Wdc3
     public List<long[]> Rows = new();   // [0] = id
     public Dictionary<long[], string[]> Texts = new();   // 4-byte columns that point into the string table
 
-    public Wdc3(byte[] b)
+    public Wdc3(byte[] b, ISet<int> sparseStrings = null)
     {
         if (BitConverter.ToUInt32(b, 0) != 0x33434457) throw new InvalidDataException("not WDC3");
         int recordCount = I(b, 4), fieldCount = I(b, 8), recordSize = I(b, 12);
@@ -45,7 +45,36 @@ class Wdc3
             arrayLen[f] = fi.type == 4 ? fi.v3 : fi.type == 0 && elemBits > 0 ? Math.Max(1, fi.sizeBits / elemBits) : 1;
             for (int a = 0; a < arrayLen[f]; a++) Columns.Add(arrayLen[f] > 1 ? $"f{f}_{a}" : $"f{f}");
         }
-        if ((flags & 1) != 0) throw new NotSupportedException("sparse (offset map) tables not handled");
+        if ((flags & 1) != 0)
+        {
+            // Sparse table (offset map, e.g. ItemSparse): variable-length records with inline strings. Which fields
+            // are strings is not in the header, so the caller names them.
+            if (sparseStrings == null) throw new NotSupportedException("sparse table: pass its inline string fields (strings=...)");
+            foreach (var s in sections)
+            {
+                int recordsEnd = s[3], idListSize = s[4], relSize = s[5], mapCount = s[6], copyCount = s[7];
+                int offsetMap = recordsEnd + idListSize + copyCount * 8, mapIds = offsetMap + mapCount * 6 + relSize;
+                for (int r = 0; r < mapCount; r++)
+                {
+                    int at = I(b, offsetMap + r * 6);
+                    var row = new long[Columns.Count];
+                    var text = new string[Columns.Count];
+                    row[0] = (uint)I(b, mapIds + r * 4);
+                    int c = 1;
+                    for (int f = 0; f < totalFields; f++)
+                        for (int a = 0; a < arrayLen[f]; a++, c++)
+                        {
+                            if (sparseStrings.Contains(f)) { text[c] = CStr(b, at); at = Array.IndexOf(b, (byte)0, at) + 1; continue; }
+                            int bytes = (32 - fieldSize[f]) / 8;
+                            row[c] = bytes == 1 ? b[at] : bytes == 2 ? BitConverter.ToUInt16(b, at) : bytes == 8 ? BitConverter.ToInt64(b, at) : (uint)I(b, at);
+                            at += bytes;
+                        }
+                    Rows.Add(row);
+                    Texts[row] = text;
+                }
+            }
+            return;
+        }
         if (sections.Any(s => s[5] > 0)) Columns.Add("rel");   // relationship map (foreign key, e.g. TransportAnimation.TransportID)
 
         foreach (var s in sections)
