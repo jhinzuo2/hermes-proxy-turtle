@@ -505,6 +505,29 @@ namespace HermesProxy.World.Client
             if (!onlyForVisibleItem)
                 SendItemUpdatesIfNeeded(item);
             GameData.StoreItemTemplate((uint)entry.Key, item);
+
+            // Answer the client's DB queries for this item even when the server's item equals the client's
+            // (no hotfix generated): without any reply the item stays "Retrieving item information".
+            if (state.RequestedItemHotfixes.Contains((uint)entry.Key))
+            {
+                DBReply itemReply = new();
+                itemReply.RecordID = (uint)entry.Key;
+                itemReply.TableHash = DB2Hash.Item;
+                itemReply.Status = HotfixStatus.Valid;
+                itemReply.Timestamp = (uint)Time.UnixTime;
+                GameData.WriteItemHotfix(item, itemReply.Data);
+                SendPacketToClient(itemReply);
+            }
+            if (state.RequestedItemSparseHotfixes.Contains((uint)entry.Key))
+            {
+                DBReply sparseReply = new();
+                sparseReply.RecordID = (uint)entry.Key;
+                sparseReply.TableHash = DB2Hash.ItemSparse;
+                sparseReply.Status = HotfixStatus.Valid;
+                sparseReply.Timestamp = (uint)Time.UnixTime;
+                GameData.WriteItemSparseHotfix(item, sparseReply.Data);
+                SendPacketToClient(sparseReply);
+            }
             ResendPendingVisibleItems((uint)entry.Key, true);
         }
 

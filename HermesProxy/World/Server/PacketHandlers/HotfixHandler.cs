@@ -1,4 +1,4 @@
-﻿using Framework.Constants;
+using Framework.Constants;
 using Framework.Logging;
 using HermesProxy.Enums;
 using HermesProxy.World;
@@ -75,6 +75,8 @@ namespace HermesProxy.World.Server
                         SendPacketToServer(packet2);
                         continue;
                     }
+                    else
+                        continue; // already asked the server: the reply follows its answer (an Invalid reply here gets cached and the item stays "Retrieving item information")
                 }
                 else if (query.TableHash == DB2Hash.ItemSparse)
                 {
@@ -97,6 +99,8 @@ namespace HermesProxy.World.Server
                         SendPacketToServer(packet2);
                         continue;
                     }
+                    else
+                        continue; // see Item above
                 }
 
                 SendPacket(reply);
