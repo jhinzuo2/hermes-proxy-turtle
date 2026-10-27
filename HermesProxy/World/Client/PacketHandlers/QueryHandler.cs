@@ -390,11 +390,6 @@ namespace HermesProxy.World.Client
                 uint path = (uint)gameObject.Data[0];
                 if (Framework.Settings.TransportPathRemap.TryGetValue(path, out uint clientPath))
                     gameObject.Data[0] = (int)clientPath;
-                // Modern layout: Data[6] = SpawnMap (none = -1), Data[10] = TrueInfiniteAOI. Vanilla servers send 0
-                // for both, i.e. "belongs to Eastern Kingdoms", so ships on Kalimdor (and map-crossing ones) were
-                // never shown; infinite AOI keeps a ship created at (0,0,0) loaded until the client moves it.
-                gameObject.Data[6] = -1;
-                gameObject.Data[10] = 1;
                 Framework.Logging.Log.Print(Framework.Logging.LogType.Server, $"[Transport] entry={response.GameObjectID} display={gameObject.DisplayID} path={path} -> {gameObject.Data[0]}");
             }
 
