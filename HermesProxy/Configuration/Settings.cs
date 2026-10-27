@@ -44,6 +44,9 @@ namespace Framework
         public static bool DropAllUnits;
         // Drop GameObject creates whose DisplayID is in this set (narrow the crashing display).
         public static System.Collections.Generic.HashSet<uint> DropGameObjectDisplays = new();
+        // Transport (type 15) taxi path the server sends -> path the client has with the same route
+        // (Turtle: server uses 967 for the Stormwind ship, the client data has it as 294).
+        public static System.Collections.Generic.Dictionary<uint, uint> TransportPathRemap = new();
         // Drop GameObject creates whose resolved entry is 0 (proxy couldn't resolve the template).
         public static bool DropZeroEntryGameObjects;
         // Drop GameObject creates with no resolvable display (GameObjectData null or DisplayID null/0).
@@ -103,6 +106,13 @@ namespace Framework
             DropGameObjectDisplays = new System.Collections.Generic.HashSet<uint>();
             foreach (var part in config.GetString("DropGameObjectDisplays", "").Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries))
                 if (uint.TryParse(part, out var d)) DropGameObjectDisplays.Add(d);
+            TransportPathRemap = new System.Collections.Generic.Dictionary<uint, uint>();
+            foreach (var part in config.GetString("TransportPathRemap", "").Split(',', System.StringSplitOptions.RemoveEmptyEntries | System.StringSplitOptions.TrimEntries))
+            {
+                var pair = part.Split(':');
+                if (pair.Length == 2 && uint.TryParse(pair[0], out var from) && uint.TryParse(pair[1], out var to))
+                    TransportPathRemap[from] = to;
+            }
             DropZeroEntryGameObjects = config.GetBoolean("DropZeroEntryGameObjects", false);
             DropNullDisplayGameObjects = config.GetBoolean("DropNullDisplayGameObjects", true);
             AirSwimAsFlight = config.GetBoolean("AirSwimAsFlight", true);

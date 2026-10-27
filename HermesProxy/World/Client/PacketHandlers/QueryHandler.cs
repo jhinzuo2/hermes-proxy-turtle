@@ -384,6 +384,15 @@ namespace HermesProxy.World.Client
             for (int i = 0; i < 24; i++)
                 gameObject.Data[i] = packet.ReadInt32();
 
+            // MO transport: Data[0] is its taxi path, which the client must have to place and draw the ship.
+            if (gameObject.Type == 15)
+            {
+                uint path = (uint)gameObject.Data[0];
+                if (Framework.Settings.TransportPathRemap.TryGetValue(path, out uint clientPath))
+                    gameObject.Data[0] = (int)clientPath;
+                Framework.Logging.Log.Print(Framework.Logging.LogType.Server, $"[Transport] entry={response.GameObjectID} display={gameObject.DisplayID} path={path} -> {gameObject.Data[0]}");
+            }
+
             if (LegacyVersion.AddedInVersion(ClientVersionBuild.V3_0_2_9056))
                 gameObject.Size = packet.ReadFloat();
 
