@@ -215,6 +215,23 @@ namespace HermesProxy.World
                     ClientGearByDisplayNoAppearance.TryAdd(item.Value, item.Key);
                 }
             }
+
+            // Items Ravencraft added to the client (e.g. 55277 The End of All Ambitions) are missing from the CSVs
+            // above, so their looks had no stand-in and a transmog to them was drawn invisible on other players.
+            // Taken from the client's own tables, only where its display id is the server's (tools/turtle/client-looks.py).
+            var looksPath = Path.Combine("CSV", $"ClientItemLooks{ModernVersion.ExpansionVersion}.csv");
+            if (File.Exists(looksPath))
+            {
+                foreach (var line in File.ReadLines(looksPath).Skip(1))
+                {
+                    var fields = line.Split(',');
+                    if (fields.Length < 3 || !uint.TryParse(fields[0], out uint itemId) || !uint.TryParse(fields[1], out uint displayId) ||
+                        !int.TryParse(fields[2], out int inventoryType) || !ClientKnownItems.Contains(itemId))
+                        continue;
+                    ClientGearByDisplayAndSlot.TryAdd((displayId, inventoryType), itemId);
+                    ClientGearByDisplay.TryAdd(displayId, itemId);
+                }
+            }
             Log.Print(LogType.Storage, $"{ClientGearByDisplay.Count} gear displays (+{ClientGearByDisplayNoAppearance.Keys.Count(d => !ClientGearByDisplay.ContainsKey(d))} without appearance rows) can stand in for unknown visible items.");
         }
 
