@@ -509,8 +509,8 @@ namespace HermesProxy.World.Client
             if (!onlyForVisibleItem)
                 SendItemUpdatesIfNeeded(item);
             GameData.StoreItemTemplate((uint)entry.Key, item);
-            if (GameData.HotfixVersion != hotfixVersion)
-                ScheduleHotfixAnnounce();
+            if (GameData.HotfixVersion != hotfixVersion && GameData.IsItemKnownToClient(item.Entry))
+                ScheduleHotfixAnnounce(item.Entry);
 
             // Answer the client's DB queries for this item even when the server's item equals the client's
             // (no hotfix generated): without any reply the item stays "Retrieving item information".
@@ -540,17 +540,19 @@ namespace HermesProxy.World.Client
 
         // Live hotfix pushes for records the client already has (ItemSparse of client-known items, e.g. Turtle stat
         // changes) are ignored by the client; it does apply hotfixes it fetches itself from the announced list. So
-        // after new item hotfixes, announce the list again (debounced: item answers come in bursts).
-        // The client then fetches the whole list again, so at most one announce per 15 s.
+        // after new hotfixes for client-known items, announce the list again (debounced: item answers come in bursts).
+        // Items the client doesn't have take the live pushes, so they need no announce. The client then fetches the
+        // records it hasn't stored yet (a short hitch), so at most one announce per 15 s.
         System.Threading.Timer _hotfixAnnounceTimer;
         DateTime _lastHotfixAnnounce = DateTime.MinValue;
-        void ScheduleHotfixAnnounce()
+        void ScheduleHotfixAnnounce(uint itemId)
         {
             var session = GetSession();
             lock (this)
             {
                 if (_hotfixAnnounceTimer != null)
                     return; // one is pending and will include this change
+                Log.Print(LogType.Storage, $"[HotfixAnnounce] scheduled for client item #{itemId}");
                 var wait = _lastHotfixAnnounce + TimeSpan.FromSeconds(15) - DateTime.Now;
                 if (wait < TimeSpan.FromSeconds(2))
                     wait = TimeSpan.FromSeconds(2);
@@ -587,7 +589,8 @@ namespace HermesProxy.World.Client
             if (GameData.HotfixVersion != hotfixVersion)
             {
                 Log.Print(LogType.Storage, $"[EnsureItemRecords] #{item.Entry} \"{item.Name[0]}\": records made from the cached template");
-                ScheduleHotfixAnnounce();
+                if (GameData.IsItemKnownToClient(item.Entry))
+                    ScheduleHotfixAnnounce(item.Entry);
             }
         }
         readonly HashSet<uint> _itemRecordsEnsured = new();
