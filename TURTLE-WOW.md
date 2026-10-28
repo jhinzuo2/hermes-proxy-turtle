@@ -70,6 +70,8 @@ site: the client resolving a model it doesn't have.
 | Hit chance shows 0% (character sheet, ECS, any era addon) | the client reads `ActivePlayer` `UiHitModifier`/`UiSpellHitModifier`; a vanilla server has neither and never sends the hidden passive auras that give hit (Turtle's own client doesn't know it either: BetterCharacterStats scans tooltips) | `HitDisplay.cs` adds it up like the server: equip spells of our gear, set bonuses we have the pieces for, known passive spells (talents), our auras; each spell's value from Turtle's Spell.dbc (`CSV/HitSpells1.csv`, `tools/turtle/hit-spells.py`). Display only; logs `[HitDisplay]`. Not counted: spell hit for a single school (e.g. Elemental Precision), hit from enchants (scopes) |
 | Inspected players' gear has no enchants | the vanilla visible-item slot carries the permanent (sub-field 1) and temporary (2) enchant and the random property (8), but only the item id was passed on | `HandleInspectResult` adds them as `InspectEnchantData` / `RandomPropertiesID` |
 | "Transmogrified to:" line flashes on own items, missing on other players | the client's port of Turtle_TransmogUI draws it only when a tooltip opens (its 0.2 s refresh drops it) and never for others; the 1.14 client ignores item modifiers for it | addon `HermesTransmog` (see [Addons](#addons)) redraws the line on every refresh. Names: own gear from Turtle's `TransmogStatus` (asked at login with `GetTransmogStatus` on `TW_TRANSMOG`), others from their Turtle UI's answer to `INSShowTransmogs`, which the server relays as `TW_CHAT_MSG_WHISPER\t\tINSTransmogs;slot;transmog;equipped` (two tabs) and the proxy forwards. Fallback: the proxy's guess from the look. Weapons are not in Turtle's inspect answer, so they keep the guess |
+| Transmog to some looks invisible on others, fine on yourself (e.g. Checkmate transmogged to 55277 The End of All Ambitions, display 68106) | the display → client item map came only from the stock item CSVs, which miss the items Ravencraft added to the client, so those looks had no stand-in | `deploy/CSV/ClientItemLooks1.csv` (`tools/turtle/client-looks.py`): the client's own item → look rows (Item, ItemModifiedAppearance, ItemAppearance), kept only where the client's display id is the server's, used after the stock map. Server gear looks without a stand-in: 1,079 → 212 |
+| Freezes of a few seconds every 15-40 s, client memory up to 5 GB, slow character screen and loading | the hotfix announce sent the table hash where the records carry the unique id, so the client never matched what it had and fetched the whole list (~6,000 records) on every re-announce, appending each copy to `Cache\ADB\enUS\DBCache.bin` (2 GB) | announce and records carry the same content hash (`HotfixRecord.ContentUniqueId`), so the client only fetches new or changed records; re-announce only for client-known items (others take the live pushes). Logs `[HotfixRequest] client asks for N of M`, `[HotfixAnnounce]`. A bloated `DBCache.bin` has to be deleted once (game closed) |
 | Chat text centered until /reload | WoWTranslate's own chat fonts had no `justifyH`, so a re-applied font (login, window resize, new whisper tab) drew centered | WoWTranslate 2.5.3: every font left-justified, `SetJustifyH("LEFT")` after applying |
 
 ## Addons
@@ -90,7 +92,8 @@ Install into the 1.14 client's `_classic_era_\Interface\AddOns`.
 ## Data
 
 The fork's own data: `CSV/Hotfix/ItemSet1.csv` + `ItemSetSpellClient1.csv` (Turtle's item sets, see the fixes table),
-`CSV/HitSpells1.csv` (spells that give hit), `CSV/Hotfix/SpellItemEnchantment1.csv` (Turtle-only enchants). Turtle's
+`CSV/HitSpells1.csv` (spells that give hit), `CSV/Hotfix/SpellItemEnchantment1.csv` (Turtle-only enchants),
+`CSV/ClientItemLooks1.csv` (the client's item → look rows where its display id is the server's). Turtle's
 `ItemSet.dbc`/`Spell.dbc` came from the Turtle client's MPQs, last patch winning (`patch.mpq`, `patch-1`, `patch-2`,
 `patch-Q`, `patch-X`, `patch-Y` on the Capycraft client).
 
@@ -111,7 +114,8 @@ weapons are missing), so "has an appearance row" is a preference, not a requirem
 4. `[ItemIcon]`, `[VisibleItem]`, `[DisplayFallback]`, `[AirSwim]` and `[SelfMove]` lines cover items, transmog,
    creature fallbacks and flight. `[TransmogLine]`, `[InspectTransmog]` and `[TurtleAddon]` (Turtle addon traffic
    both ways) cover the transmog line, `[HitDisplay]` the hit sent to the client, `[EnsureItemRecords]` item records
-   made from a cached template.
+   made from a cached template, `[HotfixRequest]`/`[HotfixAnnounce]` how many hotfixes the client fetches and why,
+   `[ItemMove]` every bag swap with the items on both sides (for bag sorting addons that never settle).
 
 ## Tools (`tools/turtle`)
 
@@ -144,6 +148,8 @@ weapons are missing), so "has an appearance row" is a preference, not a requirem
   ```
 - `item-sets.py`, `hit-spells.py`: regenerate `ItemSet1.csv`/`ItemSetSpellClient1.csv` and `HitSpells1.csv` from
   Turtle's `ItemSet.dbc`/`Spell.dbc` (+ the client's ItemSetSpell dump); usage in each file's header.
+  `client-looks.py` regenerates `ClientItemLooks1.csv` from the client's Item/ItemModifiedAppearance/ItemAppearance
+  dumps and the tortoise-wow `item_template` (run it again after a Ravencraft content update).
 - `HermesTransmog/`: the tooltip addon (see [Addons](#addons)). `boatclock/`: times transports on both clients.
 - `raven-exe/`: read Ravencraft's single-file `HermesProxy.exe`: `extract-bundle.ps1` (HermesProxy.dll +
   Framework.dll, for decompiling with ilspycmd), `extract-all.ps1` + `make-fwdep.ps1` (run it unpacked on the
@@ -168,17 +174,20 @@ weapons are missing), so "has an appearance row" is a preference, not a requirem
 - **Guild bank icons look grey** (still usable): the proxy's guild bank packets match Ravencraft's exactly
   (`Locked` never set), so it's on the client/UI side. Unchecked: same on Ravencraft's own server? with
   `Bagnon_GuildBank` off?
-- **Gear looks without a stand-in** (some transmogs, 44 NPC weapons): no client item uses that display. A full
-  1.14.2.42597 `ItemDisplayInfo` id list would show which displays the client has, so the proxy could create
-  the appearance records itself.
+- **Gear looks without a stand-in:** 212 server gear displays have no client item with that look (179 of them are
+  in the client's `ItemDisplayInfo` under the same number, unverified that it is the same look; 33 are not in the
+  client). Tracked per item in the GitHub issues.
+- **Bag sorting (Bagnon) loops on a few items:** the server does every swap and the proxy passes the updates on;
+  Bagnon keeps wanting the same pairs swapped. Probably the addon; `[ItemMove]` stays on.
 - **Transmog line for weapons on others:** Turtle's inspect answer leaves weapon slots out, so they show the proxy's
   guess from the look (right for server-made copies, can name another item with the same look).
 - **Moving to Xian55/HermesProxy:** a port of this branch onto Xian55's actively maintained fork is on local branch
-  `capycraft-xian55` (not pushed, not tested in game, without the item set / stat check / hit / inspect enchant
-  fixes yet).
-- **Not ported from Ravencraft's proxy:** custom races (Goblin etc.: `CustomCharacterCustomizations.csv`,
-  `InjectCustomRaceLanguageSkill`), character-name availability check, web credentials, re-sending own gear
-  5 s after login (`ScheduleVisibleItemsRefresh`).
+  `capycraft-xian55` (not pushed, not tested in game; has everything up to the inspect enchants, without the
+  2026-10-28 fixes: client item looks, hotfix unique ids, announce only for client items, `[ItemMove]`).
+- **Not ported from Ravencraft's proxy:** character-name availability check, web credentials, re-sending own gear
+  5 s after login (`ScheduleVisibleItemsRefresh`), its custom race files (`CustomCharacterCustomizations.csv`,
+  `InjectCustomRaceLanguageSkill`). Not needed for races: Ravencraft's custom races are Turtle's (Goblin, High Elf)
+  and play fine as is.
 
 ## Where to pull remaining fixes from
 
