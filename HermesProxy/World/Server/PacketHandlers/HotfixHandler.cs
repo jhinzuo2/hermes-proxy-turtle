@@ -113,6 +113,7 @@ namespace HermesProxy.World.Server
         void HandleHotfixRequest(HotfixRequest request)
         {
             HotfixConnect connect = new HotfixConnect();
+            Log.Print(LogType.Storage, $"[HotfixRequest] client asks for {request.Hotfixes.Count} of {GameData.Hotfixes.Count} announced hotfixes");
             foreach (uint id in request.Hotfixes)
             {
                 HotfixRecord record;
