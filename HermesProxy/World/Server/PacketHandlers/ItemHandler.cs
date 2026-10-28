@@ -1,4 +1,5 @@
 ﻿using Framework.Constants;
+using Framework.Logging;
 using HermesProxy.Enums;
 using HermesProxy.World;
 using HermesProxy.World.Enums;
@@ -69,6 +70,7 @@ namespace HermesProxy.World.Server
             packet.WriteUInt8(slot1);
             packet.WriteUInt8(slot2);
             SendPacketToServer(packet);
+            Log.Print(LogType.Storage, $"[ItemMove] swap {DescribeLegacySlot(Enums.Classic.InventorySlots.Bag0, slot1)} <-> {DescribeLegacySlot(Enums.Classic.InventorySlots.Bag0, slot2)} (client {item.Slot1} <-> {item.Slot2})");
         }
 
         [PacketHandler(Opcode.CMSG_SWAP_ITEM)]
@@ -84,6 +86,31 @@ namespace HermesProxy.World.Server
             packet.WriteUInt8(containerSlotA);
             packet.WriteUInt8(slotA);
             SendPacketToServer(packet);
+            Log.Print(LogType.Storage, $"[ItemMove] swap {DescribeLegacySlot(containerSlotA, slotA)} <-> {DescribeLegacySlot(containerSlotB, slotB)} (client {item.ContainerSlotA}/{item.SlotA} <-> {item.ContainerSlotB}/{item.SlotB})");
+        }
+
+        // Diagnostic for bag sorting addons that never settle: what the proxy thinks is in a legacy bag/slot.
+        string DescribeLegacySlot(byte bag, byte slot)
+        {
+            var state = GetSession().GameState;
+            WowGuid64 itemGuid;
+            if (bag == Enums.Classic.InventorySlots.Bag0)
+                itemGuid = state.GetInventorySlotItem(slot);
+            else
+            {
+                WowGuid64 bagGuid = state.GetInventorySlotItem(bag);
+                var bagFields = bagGuid.IsEmpty() ? null : state.GetCachedObjectFieldsLegacy(bagGuid.To128(state));
+                int CONTAINER_FIELD_SLOT_1 = LegacyVersion.GetUpdateField(ContainerField.CONTAINER_FIELD_SLOT_1);
+                itemGuid = bagFields != null && CONTAINER_FIELD_SLOT_1 >= 0 ? bagFields.GetGuidValue(CONTAINER_FIELD_SLOT_1 + slot * 2).To64() : WowGuid64.Empty;
+            }
+            if (itemGuid.IsEmpty())
+                return $"{bag}/{slot}=empty";
+            var fields = state.GetCachedObjectFieldsLegacy(itemGuid.To128(state));
+            int OBJECT_FIELD_ENTRY = LegacyVersion.GetUpdateField(ObjectField.OBJECT_FIELD_ENTRY);
+            int ITEM_FIELD_STACK_COUNT = LegacyVersion.GetUpdateField(ItemField.ITEM_FIELD_STACK_COUNT);
+            uint entry = fields != null && fields.ContainsKey(OBJECT_FIELD_ENTRY) ? fields[OBJECT_FIELD_ENTRY].UInt32Value : 0;
+            uint count = fields != null && fields.ContainsKey(ITEM_FIELD_STACK_COUNT) ? fields[ITEM_FIELD_STACK_COUNT].UInt32Value : 0;
+            return $"{bag}/{slot}=#{entry}x{count}";
         }
 
         [PacketHandler(Opcode.CMSG_DESTROY_ITEM)]
